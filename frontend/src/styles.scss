@@ -1,0 +1,249 @@
+/* styles.scss */
+
+/* Reset y ajustes globales */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', sans-serif;
+  background-color: #f8f9fa;
+  color: #111;
+  scroll-behavior: smooth;
+}
+
+/* Upload de imágenes */
+.upload-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); // ⬅️ Más ancho para visibilidad
+  gap: 1rem;
+  max-width: 880px;
+  width: 100%;
+}
+
+.upload-item {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center; // centrado consistente
+}
+
+.upload-label {
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.upload-input {
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+/* Botón de retroceso superior izquierdo */
+.back-button-fixed {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  z-index: 999;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button-fixed:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.back-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-left: 2px solid #555;
+  border-bottom: 2px solid #555;
+  transform: rotate(45deg);
+}
+
+/* Contenedor general para centrar contenido */
+.container-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 80vh;
+  text-align: center;
+}
+
+/* Estilos de títulos */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Estilos de inputs y textarea */
+input[type="text"],
+input[type="date"],
+input[type="file"],
+textarea {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 500px;
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #000;
+  outline: none;
+}
+
+/* Botones primarios negros redondeados */
+.button-primary {
+  background-color: #000;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  min-width: 180px;
+}
+
+.button-primary:hover {
+  background-color: #222;
+}
+
+.button-primary:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+/* Botones secundarios grises */
+.button-secondary {
+  background-color: #e0e0e0;
+  color: #000;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  min-width: 200px;
+}
+
+.button-secondary:hover {
+  background-color: #bdbdbd;
+}
+
+/* Grupos de botones centrados y espaciados */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+/* Utilidades de margen */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+/* Listas personalizadas */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul li::before {
+  content: "•";
+  color: #000;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+/* Imágenes */
+img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* Lista de imágenes seleccionadas */
+.imagenes-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 500px;
+  margin-top: 1rem;
+}
+
+.imagen-item {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.imagen-label {
+  font-weight: 600;
+  color: #000;
+}
+
+.imagen-filename {
+  color: #555;
+  word-break: break-all;
+  text-align: right;
+}
+
+/* Spinner */
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #000 !important;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin-top: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

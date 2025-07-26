@@ -1,0 +1,8 @@
+fastapi==0.103.2
+uvicorn==0.22.0
+python-multipart==0.0.8
+Pillow==10.2.0
+numpy==1.26.0
+pydicom==2.4.4
+requests==2.31.0
+huggingface_hub==0.20.3

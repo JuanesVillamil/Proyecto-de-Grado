@@ -1,0 +1,97 @@
+<!-- Botón de volver -->
+<button class="back-button-fixed" (click)="volver()">
+  <span class="back-icon"></span>
+</button>
+
+<div class="container-centered">
+  <h1>Clasificador de Mamografías en Escala BI-RADS</h1>
+
+  <!-- Nombre del paciente -->
+  <label class="upload-label mt-2">Nombre del Paciente</label>
+  <input
+    type="text"
+    [(ngModel)]="nombrePaciente"
+    name="nombrePaciente"
+    class="mt-2"
+  />
+
+  <!-- Documento del paciente -->
+  <label class="upload-label mt-2">Documento del Paciente</label>
+  <input
+    type="text"
+    [(ngModel)]="documentoPaciente"
+    name="documentoPaciente"
+    class="mt-2"
+  />
+
+  <!-- Fecha de nacimiento -->
+  <label class="upload-label mt-2">Fecha de Nacimiento</label>
+  <input
+    type="date"
+    [(ngModel)]="fechaNacimiento"
+    name="fechaNacimiento"
+    class="mt-2"
+  />
+
+  <!-- Subida de vistas específicas con etiquetas -->
+  <div class="upload-list mt-3">
+
+    <label class="upload-item">
+      <span class="upload-label">L-CC (Cráneo-Caudal Izquierda)</span>
+      <input
+        type="file"
+        (change)="onFilesSelected($event, 'l_cc')"
+        accept=".dcm,.jpg,.jpeg,.png"
+        class="upload-input"
+      />
+    </label>
+
+    <label class="upload-item">
+      <span class="upload-label">R-CC (Cráneo-Caudal Derecha)</span>
+      <input
+        type="file"
+        (change)="onFilesSelected($event, 'r_cc')"
+        accept=".dcm,.jpg,.jpeg,.png"
+        class="upload-input"
+      />
+    </label>
+
+    <label class="upload-item">
+      <span class="upload-label">L-MLO (Oblicua Medio-Lateral Izquierda)</span>
+      <input
+        type="file"
+        (change)="onFilesSelected($event, 'l_mlo')"
+        accept=".dcm,.jpg,.jpeg,.png"
+        class="upload-input"
+      />
+    </label>
+
+    <label class="upload-item">
+      <span class="upload-label">R-MLO (Oblicua Medio-Lateral Derecha)</span>
+      <input
+        type="file"
+        (change)="onFilesSelected($event, 'r_mlo')"
+        accept=".dcm,.jpg,.jpeg,.png"
+        class="upload-input"
+      />
+    </label>
+
+  </div>
+
+  <!-- Imágenes seleccionadas -->
+  <div *ngIf="imagenesKeys.length > 0" class="imagenes-list mt-3">
+    <div class="imagen-item" *ngFor="let key of imagenesKeys">
+      <span class="imagen-label">{{ key.toUpperCase() }}:</span>
+      <span class="imagen-filename">{{ imagenesSeleccionadas[key].name }}</span>
+    </div>
+  </div>
+
+  <!-- Botón de análisis -->
+  <button
+    (click)="analizarImagenes()"
+    [disabled]="imagenesKeys.length === 0 || !nombrePaciente || !documentoPaciente || !fechaNacimiento"
+    class="button-primary mt-3"
+  >
+    Analizar Imágenes
+  </button>
+</div>

@@ -1,0 +1,72 @@
+<button class="back-button-fixed" (click)="volver()">
+  <span class="back-icon"></span>
+</button>
+
+<div class="container-centered" #reporte>
+  <h1>Reporte de Análisis BI-RADS</h1>
+
+  <div class="report-info mt-2">
+    <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
+    <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
+    <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
+    <p><strong>Clasificación promedio:</strong> BI-RADS {{ datosReporte.birads }}</p>
+  </div>
+
+  <!-- Clasificación por vista -->
+  <div class="mt-2" *ngIf="datosReporte.detalles">
+    <h3>Clasificación por Vista</h3>
+    <ul>
+      <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
+        {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
+        ({{ (datosReporte.detalles[vista].confidence * 100) | number:'1.1-2' }}%)
+      </li>
+    </ul>
+  </div>
+
+  <!-- Imágenes procesadas en formato grid -->
+  <div class="mt-2" *ngIf="datosReporte.detalles">
+    <h3>Imágenes Procesadas</h3>
+    <div class="image-grid-grid">
+      <div class="image-item" *ngFor="let vista of objectKeys(datosReporte.detalles)">
+        <p>{{ vista }}</p>
+        <img [src]="datosReporte.detalles[vista].image_url" alt="{{ vista }}" />
+      </div>
+    </div>
+  </div>
+
+  <div class="observaciones-section mt-2">
+    <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
+    <textarea
+      id="observaciones"
+      [(ngModel)]="observacionesRadiologo"
+      placeholder="Escriba aquí las observaciones o pasos a seguir..."
+      rows="5"
+    ></textarea>
+  </div>
+
+  <button class="button-primary mt-3" (click)="descargarPDF()">
+    Descargar Reporte
+  </button>
+</div>
+
+<style>
+.image-grid-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.image-item img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 8px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+.image-item p {
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-weight: bold;
+}
+</style>

@@ -1,0 +1,35 @@
+# --- NODE / ANGULAR ---
+node_modules/
+dist/
+tmp/
+temp/
+.cache/
+.angular/
+
+# --- SYSTEM FILES ---
+.DS_Store
+Thumbs.db
+
+# --- ENV / CONFIG ---
+.env
+*.env.local
+*.log
+
+# --- PYTHON (backend) ---
+__pycache__/
+*.pyc
+
+# --- VSCODE / IDE ---
+.vscode/
+.idea/
+
+# --- ELECTRON ---
+out/
+*.asar
+
+# --- OS Metadata ---
+*.swp
+*.swo
+
+# --- Test coverage ---
+coverage/
