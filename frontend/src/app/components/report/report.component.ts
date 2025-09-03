@@ -24,6 +24,8 @@ export class ReportComponent {
     detalles: {}
   };
 
+  zoomedImage: string | null = null;
+
   objectKeys = Object.keys;
 
   constructor(private router: Router) {
@@ -54,9 +56,12 @@ export class ReportComponent {
         .map((v: any) => v.birads)
         .filter((v: any) => typeof v === 'number');
       if (valores.length > 0) {
-        const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
-        birads = Math.round(promedio).toString();
-        resumen = `Clasificación promedio BI-RADS estimada: ${birads}`;
+        const maximo = Math.max(...valores);
+        birads = maximo.toString();
+        const index = valores.indexOf(maximo);
+        const clave = Object.keys(resultado)[index];
+        const vistaTexto = this.mapVistaLabel(clave);
+        resumen = `BI-RADS ${birads} (${vistaTexto})`;
       }
     }
 
@@ -71,13 +76,21 @@ export class ReportComponent {
     };
   }
 
-  private mapVistaLabel(vista: string): string {
+  public mapVistaLabel(vista: string): string {
     switch (vista.toUpperCase()) {
-      case 'L-CC': return 'CC Izquierda (Cráneo-Caudal)';
-      case 'R-CC': return 'CC Derecha (Cráneo-Caudal)';
-      case 'L-MLO': return 'MLO Izquierda (Oblicua Medio-Lateral)';
-      case 'R-MLO': return 'MLO Derecha (Oblicua Medio-Lateral)';
+      case 'L-CC': return 'Cráneo-Caudal Izquierda';
+      case 'R-CC': return 'Cráneo-Caudal Derecha';
+      case 'L-MLO': return 'Oblicua Medio-Lateral Izquierda';
+      case 'R-MLO': return 'Oblicua Medio-Lateral Derecha';
       default: return vista;
+    }
+  }
+
+  toggleZoom(vista?: string) {
+    if (vista && this.datosReporte?.detalles?.[vista]) {
+      this.zoomedImage = this.datosReporte.detalles[vista].image_url;
+    } else {
+      this.zoomedImage = null;
     }
   }
 
@@ -111,10 +124,16 @@ export class ReportComponent {
 
     y += 35;
     doc.setFontSize(13);
-    doc.text(`Clasificación promedio: BI-RADS ${this.datosReporte.birads}`, 20, y);
-    y += 8;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Resumen: ${this.datosReporte.resumen}`, 20, y, { maxWidth: 170 });
+    const textoBase1 = 'Clasificación más alta: ';
+    const textoBase2 = 'BI-RADS ' + this.datosReporte.birads;
+    const textoVista = '(' + this.datosReporte.resumen.split('BI-RADS ' + this.datosReporte.birads)[1]?.replace('(', '').replace(')', '') + ')';
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(textoBase1 + textoBase2, 20, y);
+
+    const baseWidth = doc.getTextWidth(textoBase1 + textoBase2);
+    doc.setFont('helvetica', 'italic');
+    doc.text(textoVista, 20 + baseWidth + 1, y);
 
     if (this.datosReporte.detalles && Object.keys(this.datosReporte.detalles).length > 0) {
       y += 20;
@@ -188,14 +207,19 @@ export class ReportComponent {
       }
     }
 
-    y += 110;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Observaciones del Radiólogo:', 20, y);
-    y += 8;
-    doc.setFont('helvetica', 'normal');
+    y += 15;
     const observaciones = this.observacionesRadiologo || 'Sin observaciones añadidas.';
-    doc.text(observaciones, 20, y, { maxWidth: 170 });
+    const obsLines = doc.splitTextToSize(observaciones, 160);
+    const obsHeight = obsLines.length * 7 + 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Observaciones del Radiólogo:', 25, y + 7);
+
+    doc.rect(20, y, 170, obsHeight);
+    doc.setFont('helvetica', 'normal');
+    doc.text(obsLines, 25, y + 14);
+    y += obsHeight;
 
     doc.save(`Reporte_${this.datosReporte.paciente}_${this.datosReporte.fecha}.pdf`);
   }

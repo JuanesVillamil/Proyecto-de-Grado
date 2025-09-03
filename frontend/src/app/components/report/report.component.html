@@ -8,8 +8,8 @@
   <div class="report-info mt-2">
     <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
     <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
+    <p><strong>Clasificación más alta:</strong> BI-RADS {{ datosReporte.birads }} (<span style="font-style: italic;">{{ datosReporte.resumen.split('BI-RADS ' + datosReporte.birads)[1]?.replace('(', '').replace(')', '') }}</span>)</p>
     <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
-    <p><strong>Clasificación promedio:</strong> BI-RADS {{ datosReporte.birads }}</p>
   </div>
 
   <!-- Clasificación por vista -->
@@ -29,7 +29,10 @@
     <div class="image-grid-grid">
       <div class="image-item" *ngFor="let vista of objectKeys(datosReporte.detalles)">
         <p>{{ vista }}</p>
-        <img [src]="datosReporte.detalles[vista].image_url" alt="{{ vista }}" />
+        <p style="font-style: italic; font-weight: normal; font-size: 0.9rem;">{{ mapVistaLabel(vista) }}</p>
+        <div class="image-wrapper">
+          <img [src]="datosReporte.detalles[vista].image_url" alt="{{ vista }}" (click)="toggleZoom(vista)" />
+        </div>
       </div>
     </div>
   </div>
@@ -49,6 +52,11 @@
   </button>
 </div>
 
+<!-- Imagen Ampliada -->
+<div class="zoomed-overlay" *ngIf="zoomedImage" (click)="toggleZoom()">
+  <img [src]="zoomedImage" class="zoomed-image" />
+</div>
+
 <style>
 .image-grid-grid {
   display: grid;
@@ -63,10 +71,28 @@
   border-radius: 8px;
   background-color: #fff;
   border: 1px solid #ccc;
+  cursor: zoom-in;
 }
 .image-item p {
   margin-bottom: 0.5rem;
   text-align: center;
   font-weight: bold;
+}
+.zoomed-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: zoom-out;
+}
+.zoomed-image {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+  transition: transform 0.3s ease-in-out;
 }
 </style>

@@ -18,6 +18,7 @@ Thumbs.db
 # --- PYTHON (backend) ---
 __pycache__/
 *.pyc
+venv/
 
 # --- VSCODE / IDE ---
 .vscode/

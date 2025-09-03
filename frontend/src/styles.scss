@@ -18,7 +18,7 @@ html, body {
 /* Upload de imágenes */
 .upload-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); // ⬅️ Más ancho para visibilidad
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1rem;
   max-width: 880px;
   width: 100%;

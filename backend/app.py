@@ -8,49 +8,130 @@ import time
 import pydicom
 import numpy as np
 from PIL import Image
-
 from predict_resnet_multiview import predict_birads_per_view
 
 app = FastAPI()
 
-# Middleware CORS correctamente aplicado
+# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Ruta absoluta relativa al script para archivos temporales
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Montar como recurso estático
 app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
 
 def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> str:
+    import cv2
+
     extension = upload_file.filename.split('.')[-1].lower()
     timestamp = str(int(time.time() * 1000))
-    nombre_final = f"{nombre_archivo}_{timestamp}.jpg"
+    nombre_final = f"{nombre_archivo}_{timestamp}.png"
     destino = os.path.join(TEMP_DIR, nombre_final)
     temp_path = os.path.join(TEMP_DIR, f"temp_{nombre_archivo}")
 
+    # Guardar archivo temporal
     with open(temp_path, "wb") as temp:
         shutil.copyfileobj(upload_file.file, temp)
 
+    # Tratar .dicom igual que .dcm
+    if extension == "dicom":
+        extension = "dcm"
+
     if extension == "dcm":
-        ds = pydicom.dcmread(temp_path)
-        arr = ds.pixel_array
-        if len(arr.shape) == 2:
-            arr = (arr / np.max(arr) * 255).astype(np.uint8)
+        try:
+            ds = pydicom.dcmread(temp_path, force=True)
+            arr = ds.pixel_array.astype(np.float32)
+
+            # Invertir si MONOCHROME1
+            if ds.get('PhotometricInterpretation') == "MONOCHROME1":
+                arr = np.max(arr) - arr
+
+            # Normalizar y convertir a uint8
+            arr = cv2.normalize(arr, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+            # Aplicar CLAHE
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            arr = clahe.apply(arr)
+
+            # Aplicar gamma correction si la imagen es muy brillante
+            mean_val = np.mean(arr)
+            if mean_val > 200:
+                gamma = 0.6
+                look_up = np.array([((i / 255.0) ** gamma) * 255 for i in range(256)]).astype("uint8")
+                arr = cv2.LUT(arr, look_up)
+
+            # Recorte automático mejorado
+            blurred = cv2.GaussianBlur(arr, (5, 5), 0)
+            _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((20, 20), np.uint8))
+            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            if contours:
+                tissue_mask = np.zeros_like(binary)
+                largest_contour = max(contours, key=cv2.contourArea)
+                cv2.drawContours(tissue_mask, [largest_contour], -1, 255, -1)
+                coords = np.column_stack(np.where(tissue_mask > 0))
+                y0, x0 = coords.min(axis=0)
+                y1, x1 = coords.max(axis=0)
+
+                h, w = arr.shape
+                pad = 10
+                y0 = max(0, y0 - pad)
+                y1 = min(h, y1 + pad)
+                x0 = max(0, x0 - pad)
+                x1 = min(w, x1 + pad)
+
+                cropped = arr[y0:y1, x0:x1]
+
+                min_width = 224
+                orig_width = arr.shape[1]
+                cropped_ratio = cropped.shape[1] / orig_width
+
+                if cropped_ratio < 0.4:
+                    print("⚠️ Recorte rechazado: tejido demasiado estrecho. Intentando centrar región.")
+                    x_center = (x0 + x1) // 2
+                    crop_width = max(int(0.5 * orig_width), min_width)
+                    x0 = max(0, x_center - crop_width // 2)
+                    x1 = min(orig_width, x_center + crop_width // 2)
+                    arr = arr[y0:y1, x0:x1]
+                elif cropped.shape[1] < min_width:
+                    pad_width = max(min_width, int(0.6 * orig_width))
+                    padded = np.zeros((cropped.shape[0], pad_width), dtype=np.uint8)
+                    offset = (pad_width - cropped.shape[1]) // 2
+                    padded[:, offset:offset + cropped.shape[1]] = cropped
+                    arr = padded
+                else:
+                    arr = cropped
+
             im = Image.fromarray(arr).convert("RGB")
-        else:
-            raise Exception("DICOM con más de 1 canal no es compatible")
-        im.save(destino)
+            if im.width < 224 or im.height < 224:
+                # Redimensionar conservando aspecto si es menor a 224
+                scale = 224 / min(im.width, im.height)
+                new_size = (int(im.width * scale), int(im.height * scale))
+                im = im.resize(new_size, Image.LANCZOS)
+            im.save(destino)
+        except Exception as e:
+            raise ValueError("No se pudo procesar el archivo DICOM. Verifique su integridad.")
     else:
-        im = Image.open(temp_path).convert("RGB")
-        im.save(destino)
+        try:
+            with open(temp_path, "rb") as f:
+                img_check = Image.open(f)
+                img_check.load()
+            im = Image.open(temp_path).convert("RGB")
+            if im.width < 224 or im.height < 224:
+                # Redimensionar conservando aspecto si es menor a 224
+                scale = 224 / min(im.width, im.height)
+                new_size = (int(im.width * scale), int(im.height * scale))
+                im = im.resize(new_size, Image.LANCZOS)
+            im.save(destino)
+        except Exception:
+            raise ValueError("Archivo de imagen no válido o corrupto.")
 
     os.remove(temp_path)
     return destino
@@ -62,7 +143,6 @@ async def predict(
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None)
 ):
-    # Limpiar archivos anteriores
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
 
