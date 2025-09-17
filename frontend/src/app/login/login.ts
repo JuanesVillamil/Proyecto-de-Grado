@@ -2,16 +2,17 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
-@Component({
-  standalone: true,
-  selector: 'app-home',
-  imports: [CommonModule],
-  templateUrl: './home.component.html',
-})
-export class HomeComponent {
-  constructor(private router: Router) {}
 
-  irALogin() {
-    this.router.navigate(['/login']);
+@Component({
+  selector: 'app-login',
+  imports: [CommonModule],
+  templateUrl: './login.html',
+  styleUrl: './login.scss'
+})
+export class LoginComponent {
+  constructor(private router: Router) {}
+  
+   irAUpload() {
+    this.router.navigate(['/upload']);
   }
 }

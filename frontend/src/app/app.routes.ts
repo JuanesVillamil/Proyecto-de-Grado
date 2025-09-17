@@ -4,6 +4,7 @@ import { UploadComponent } from './components/upload/upload.component';
 import { AnalysisComponent } from './components/analysis/analysis.component';
 import { ResultsComponent } from './components/results/results.component';
 import { ReportComponent } from './components/report/report.component';
+import { LoginComponent } from './login/login';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -11,5 +12,6 @@ export const routes: Routes = [
   { path: 'analysis', component: AnalysisComponent },
   { path: 'results', component: ResultsComponent },
   { path: 'report', component: ReportComponent },
+  { path: 'login', component: LoginComponent},
   { path: '**', redirectTo: '' }
 ];

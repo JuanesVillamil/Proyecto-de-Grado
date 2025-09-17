@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { jsPDF } from 'jspdf';
+import { Navbar } from "../../navbar/navbar";
 
 @Component({
   standalone: true,
   selector: 'app-report',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './report.component.html',
 })
 export class ReportComponent {

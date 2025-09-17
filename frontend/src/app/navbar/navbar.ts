@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
-  standalone: true,
-  selector: 'app-home',
+  selector: 'app-navbar',
   imports: [CommonModule],
-  templateUrl: './home.component.html',
+  templateUrl: './navbar.html',
+  styleUrl: './navbar.scss'
 })
-export class HomeComponent {
+export class Navbar {
   constructor(private router: Router) {}
 
-  irALogin() {
-    this.router.navigate(['/login']);
+  volver() {
+    this.router.navigate(['/']);
   }
+
 }
