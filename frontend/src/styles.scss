@@ -158,6 +158,26 @@ textarea:focus {
   background-color: #bdbdbd;
 }
 
+/* Botones blancos */
+
+.button-white {
+  background-color: #fff;
+  color: #000;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  min-width: 180px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.button-white:hover {
+  background-color: #f0f0f0;
+}
+
 /* Grupos de botones centrados y espaciados */
 .button-group {
   display: flex;
@@ -243,7 +263,57 @@ img {
   margin-top: 20px;
 }
 
+/* Slider de cornerstone */
+.slider-contraste input[type="range"] {
+  -webkit-appearance: none;
+  width: 200px;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.slider-contraste input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 10px;
+}
+
+.slider-contraste input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: pointer;
+  margin-top: -8px;
+  transition: background 0.2s ease;
+}
+
+.slider-contraste input[type="range"]::-webkit-slider-thumb:hover {
+  background-color: #f0f0f0;
+}
+
+.slider-contraste input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 10px;
+}
+
+.slider-contraste input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: pointer;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+

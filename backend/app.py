@@ -2,6 +2,14 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+class CORSAwareStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response: Response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
 import shutil
 import os
 import time
@@ -24,7 +32,7 @@ app.add_middleware(
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
+app.mount("/images", CORSAwareStaticFiles(directory=TEMP_DIR), name="images")
 
 def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> str:
     import cv2

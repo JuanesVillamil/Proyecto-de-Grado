@@ -9,7 +9,7 @@
   <div class="report-info mt-2">
     <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
     <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
-    <p><strong>Clasificación más alta:</strong> BI-RADS {{ datosReporte.birads }} (<span style="font-style: italic;">{{ datosReporte.resumen.split('BI-RADS ' + datosReporte.birads)[1]?.replace('(', '').replace(')', '') }}</span>)</p>
+    <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
     <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
   </div>
 
@@ -28,7 +28,8 @@
   <div class="mt-2" *ngIf="datosReporte.detalles">
     <h3>Imágenes Procesadas</h3>
     <div class="imagen-grafica-grid">
-      <div class="imagen-grafica-item" *ngFor="let vista of vistas">
+      <ng-container *ngFor="let vista of vistas">
+        <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
         <p class="titulo-vista">{{ vista.nombre }}</p>
         <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
 
@@ -41,7 +42,8 @@
         <div class="grafica-wrapper">
           <canvas id="{{ vista.id }}"></canvas>
         </div>
-      </div>
+        </div>
+      </ng-container>
     </div>
   </div>
 
@@ -60,10 +62,14 @@
   </button>
 </div>
 
-<!-- Imagen Ampliada -->
-<div class="zoomed-overlay" *ngIf="zoomedImage" (click)="toggleZoom()">
-  <img [src]="zoomedImage" class="zoomed-image" />
-</div>
+<!-- Visor Cornerstone con herramientas -->
+<app-visor-cornerstone
+  *ngIf="visorActivo"
+  [imagenUrl]="imagenSeleccionada"
+  [vista]="vistaSeleccionada"
+  (cerrar)="cerrarVisor($event)"
+  (actualizar)="actualizarImagenProcesada($event)">
+</app-visor-cornerstone>
 
 <style>
 .imagen-grafica-grid {
@@ -132,10 +138,9 @@
 }
 
 .zoomed-image {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 75%;
+  max-height: 75%;
   border-radius: 12px;
   transition: transform 0.3s ease-in-out;
 }
-
 </style>
