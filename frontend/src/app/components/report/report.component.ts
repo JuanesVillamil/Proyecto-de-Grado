@@ -1,17 +1,19 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { jsPDF } from 'jspdf';
 import { Navbar } from "../../navbar/navbar";
+import { Chart } from 'chart.js/auto';
 
 @Component({
   standalone: true,
   selector: 'app-report',
   imports: [CommonModule, FormsModule, Navbar],
   templateUrl: './report.component.html',
+  styleUrls: ['./report.component.scss']
 })
-export class ReportComponent {
+export class ReportComponent implements AfterViewInit {
   observacionesRadiologo: string = '';
   @ViewChild('reporte', { static: false }) reporteElement!: ElementRef;
 
@@ -26,8 +28,14 @@ export class ReportComponent {
   };
 
   zoomedImage: string | null = null;
-
   objectKeys = Object.keys;
+
+  vistas = [
+    { id: 'chart-lcc', nombre: 'L-CC', descripcion: 'Cráneo-Caudal Izquierda' },
+    { id: 'chart-rcc', nombre: 'R-CC', descripcion: 'Cráneo-Caudal Derecha' },
+    { id: 'chart-lmlo', nombre: 'L-MLO', descripcion: 'Oblicua Medio-Lateral Izquierda' },
+    { id: 'chart-rmlo', nombre: 'R-MLO', descripcion: 'Oblicua Medio-Lateral Derecha' }
+  ];
 
   constructor(private router: Router) {
     const nombre = localStorage.getItem('nombrePaciente') || 'No ingresado';
@@ -77,7 +85,65 @@ export class ReportComponent {
     };
   }
 
-  public mapVistaLabel(vista: string): string {
+  ngAfterViewInit(): void {
+    if (this.datosReporte?.detalles) {
+      this.renderizarGraficas();
+    }
+  }
+
+  renderizarGraficas() {
+    const colores = [
+      'rgba(117, 251, 216, 1)', // BI-RADS 1
+      'rgba(117, 251, 76, 1)',  // BI-RADS 2
+      'rgba(254, 251, 83, 1)',  // BI-RADS 3
+      'rgba(255, 102, 0, 1)',  // BI-RADS 4
+      'rgba(234, 52, 37, 1)'    // BI-RADS 5
+    ];
+
+    const etiquetas = ['BI-RADS 1', 'BI-RADS 2', 'BI-RADS 3', 'BI-RADS 4', 'BI-RADS 5'];
+
+    for (const vista of this.vistas) {
+      const datosVista = this.datosReporte?.detalles?.[vista.nombre];
+      const probs = datosVista?.probabilidades;
+      if (!probs) continue;
+
+      const ctx = document.getElementById(vista.id) as HTMLCanvasElement;
+      if (!ctx) continue;
+
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: etiquetas,
+          datasets: [{
+            data: probs,
+            backgroundColor: colores,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 13 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const value = context.raw as number;
+                  return `${context.label}: ${value.toFixed(2)}%`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  mapVistaLabel(vista: string): string {
     switch (vista.toUpperCase()) {
       case 'L-CC': return 'Cráneo-Caudal Izquierda';
       case 'R-CC': return 'Cráneo-Caudal Derecha';
@@ -95,7 +161,7 @@ export class ReportComponent {
     }
   }
 
-  async descargarPDF() {
+    async descargarPDF() {
     const doc = new jsPDF();
     let y = 20;
 
