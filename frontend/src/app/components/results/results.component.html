@@ -1,13 +1,14 @@
-<button class="back-button-fixed" (click)="volver()">
-  <span class="back-icon"></span>
-</button>
+<!-- Header -->
+<header>
+  <app-navbar></app-navbar>
+</header>
 
 <div class="container-centered">
   <h1>Resultados del Análisis BI-RADS</h1>
 
   <div class="result-card mt-3">
     <p *ngIf="analisisExitoso">
-      El análisis de las mamografías se realizó con éxito. Selecciona "Continuar" para generar el reporte en PDF.
+      El análisis de las mamografías se realizó con éxito. Selecciona "Continuar" para ver los resultados.
     </p>
     <p *ngIf="!analisisExitoso">
       No se pudo realizar el análisis. Verifica que hayas subido todas las imágenes correctamente.

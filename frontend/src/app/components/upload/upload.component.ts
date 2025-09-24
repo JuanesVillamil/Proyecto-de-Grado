@@ -54,7 +54,7 @@ export class UploadComponent {
       next: (resultado: any) => {
         localStorage.setItem('birads_resultado', JSON.stringify(resultado));
         this.isProcessing = false;
-        this.router.navigate(['/report']);
+        this.router.navigate(['/results']);
       },
       error: () => {
         this.isProcessing = false;

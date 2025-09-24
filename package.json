@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "chart.js": "^4.5.0",
+    "cornerstone": "^0.1.1",
     "cornerstone-core": "^2.3.0",
     "cornerstone-math": "^0.1.8",
     "cornerstone-tools": "^4.14.0",

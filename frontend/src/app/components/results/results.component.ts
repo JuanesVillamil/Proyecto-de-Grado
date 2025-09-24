@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Navbar } from "../../navbar/navbar";
 
 @Component({
   standalone: true,
   selector: 'app-results',
-  imports: [CommonModule],
+  imports: [CommonModule, Navbar],
   templateUrl: './results.component.html',
   styleUrls: ['./results.component.scss']
 })
