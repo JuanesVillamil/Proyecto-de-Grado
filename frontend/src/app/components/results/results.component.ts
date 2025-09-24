@@ -24,10 +24,6 @@ export class ResultsComponent {
     }
   }
 
-  volver() {
-    this.router.navigate(['/upload']); // Ir directamente a upload
-  }
-
   generarReporte() {
     if (this.analisisExitoso) {
       this.router.navigate(['/report']);

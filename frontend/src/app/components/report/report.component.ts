@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { Navbar } from "../../navbar/navbar";
 import { Chart } from 'chart.js/auto';
 import { VisorCornerstoneComponent } from '../upload/visor-cornerstone/visor-cornerstone.component';
+
 @Component({
   standalone: true,
   selector: 'app-report',
@@ -14,6 +15,9 @@ import { VisorCornerstoneComponent } from '../upload/visor-cornerstone/visor-cor
   styleUrls: ['./report.component.scss']
 })
 export class ReportComponent implements AfterViewInit {
+  resultado: any = null;
+  analisisExitoso: boolean = false;
+  mostrarReporte: boolean = false;
   observacionesRadiologo: string = '';
   get observacionesLimitadas(): string {
     return this.observacionesRadiologo.length > 900
@@ -81,7 +85,16 @@ export class ReportComponent implements AfterViewInit {
       resumen: resumen,
       detalles: detalles
     };
+
+    const storedResult = localStorage.getItem('birads_resultado');
+    if (storedResult) {
+      this.resultado = JSON.parse(storedResult);
+      this.analisisExitoso = true;
+    } else {
+      this.analisisExitoso = false;
+    }
   }
+  
   ngAfterViewInit(): void {
     if (this.datosReporte?.detalles) {
       this.renderizarGraficas();
@@ -301,8 +314,13 @@ export class ReportComponent implements AfterViewInit {
     }
     doc.save(`Reporte_${this.datosReporte.paciente}_${this.datosReporte.fecha}.pdf`);
   }
-  volver() {
-    this.router.navigate(['/results']);
+
+  generarReporte() {
+    this.mostrarReporte = true;
+
+    setTimeout(() => {
+    this.renderizarGraficas();
+  });
   }
 }
 
