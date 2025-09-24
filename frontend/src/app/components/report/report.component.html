@@ -2,17 +2,14 @@
 <header>
   <app-navbar></app-navbar>
 </header>
-
 <div class="container-centered" #reporte>
   <h1>Reporte de Análisis BI-RADS</h1>
-
   <div class="report-info mt-2">
     <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
     <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
     <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
     <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
   </div>
-
   <!-- Clasificación por vista -->
   <div class="mt-2" *ngIf="datosReporte.detalles">
     <h3>Clasificación por Vista</h3>
@@ -23,7 +20,6 @@
       </li>
     </ul>
   </div>
-
   <!-- Imágenes y gráficas -->
   <div class="mt-2" *ngIf="datosReporte.detalles">
     <h3>Imágenes Procesadas</h3>
@@ -32,13 +28,11 @@
         <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
         <p class="titulo-vista">{{ vista.nombre }}</p>
         <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
-
         <div class="image-wrapper">
           <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
                alt="{{ vista.nombre }}"
                (click)="toggleZoom(vista.nombre)" />
         </div>
-
         <div class="grafica-wrapper">
           <canvas id="{{ vista.id }}"></canvas>
         </div>
@@ -46,7 +40,6 @@
       </ng-container>
     </div>
   </div>
-
   <div class="observaciones-section" style="margin-top: 3rem;">
     <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
     <textarea
@@ -56,12 +49,10 @@
       rows="5"
     ></textarea>
   </div>
-
   <button class="button-primary mt-3" (click)="descargarPDF()">
     Descargar Reporte
   </button>
 </div>
-
 <!-- Visor Cornerstone con herramientas -->
 <app-visor-cornerstone
   *ngIf="visorActivo"
@@ -70,7 +61,6 @@
   (cerrar)="cerrarVisor($event)"
   (actualizar)="actualizarImagenProcesada($event)">
 </app-visor-cornerstone>
-
 <style>
 .imagen-grafica-grid {
   display: grid;
@@ -78,26 +68,22 @@
   gap: 2rem;
   margin-top: 1rem;
 }
-
 .imagen-grafica-item {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 .titulo-vista {
   font-weight: bold;
   font-size: 1.2rem;
   margin-bottom: 0.2rem;
 }
-
 .descripcion-vista {
   font-style: italic;
   font-weight: normal;
   font-size: 0.9rem;
   margin-bottom: 0.8rem;
 }
-
 .image-wrapper {
   width: 200px;
   height: 280px;
@@ -110,7 +96,6 @@
   overflow: hidden;
   padding: 0rem;
 }
-
 .image-wrapper img {
   max-width: 100%;
   max-height: 100%;
@@ -118,13 +103,11 @@
   border-radius: 4px;
   cursor: zoom-in;
 }
-
 .grafica-wrapper canvas {
   width: 245px !important;
   height: 245px !important;
   margin-top: 0.7rem;
 }
-
 .zoomed-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -136,7 +119,6 @@
   align-items: center;
   cursor: zoom-out;
 }
-
 .zoomed-image {
   max-width: 75%;
   max-height: 75%;

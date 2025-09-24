@@ -13,6 +13,7 @@ html, body {
   background-color: #f8f9fa;
   color: #111;
   scroll-behavior: smooth;
+  padding-top: 80px;
 }
 
 /* Upload de imágenes */
@@ -51,7 +52,7 @@ html, body {
 /* Botón de retroceso superior izquierdo */
 .back-button-fixed {
   position: fixed;
-  top: 20px;
+  top: 70px;
   left: 20px;
   background: transparent;
   border: none;
@@ -265,6 +266,7 @@ img {
 
 /* Slider de cornerstone */
 .slider-contraste input[type="range"] {
+  appearance: none;
   -webkit-appearance: none;
   width: 200px;
   height: 6px;

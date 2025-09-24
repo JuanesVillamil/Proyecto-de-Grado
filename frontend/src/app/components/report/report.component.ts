@@ -5,8 +5,7 @@ import { Router } from '@angular/router';
 import { jsPDF } from 'jspdf';
 import { Navbar } from "../../navbar/navbar";
 import { Chart } from 'chart.js/auto';
-import { VisorCornerstoneComponent } from '../visor-cornerstone/visor-cornerstone.component';
-
+import { VisorCornerstoneComponent } from '../upload/visor-cornerstone/visor-cornerstone.component';
 @Component({
   standalone: true,
   selector: 'app-report',
@@ -22,7 +21,6 @@ export class ReportComponent implements AfterViewInit {
       : this.observacionesRadiologo;
   }
   @ViewChild('reporte', { static: false }) reporteElement!: ElementRef;
-
   datosReporte: any = {
     paciente: 'No ingresado',
     documento: 'No ingresado',
@@ -32,40 +30,33 @@ export class ReportComponent implements AfterViewInit {
     resumen: '',
     detalles: {}
   };
-
   objectKeys = Object.keys;
   visorActivo: boolean = false;
   imagenSeleccionada: string = '';
   vistaSeleccionada: string = '';
-
   vistas = [
     { id: 'chart-lcc', nombre: 'L-CC', descripcion: 'Cráneo-Caudal Izquierda' },
     { id: 'chart-rcc', nombre: 'R-CC', descripcion: 'Cráneo-Caudal Derecha' },
     { id: 'chart-lmlo', nombre: 'L-MLO', descripcion: 'Oblicua Medio-Lateral Izquierda' },
     { id: 'chart-rmlo', nombre: 'R-MLO', descripcion: 'Oblicua Medio-Lateral Derecha' }
   ];
-
   constructor(private router: Router) {
     const nombre = localStorage.getItem('nombrePaciente') || 'No ingresado';
     const documento = localStorage.getItem('documentoPaciente') || 'No ingresado';
     const fechaNacimiento = localStorage.getItem('fechaNacimiento');
     let edad = 'No ingresado';
-
     if (fechaNacimiento) {
       const nacimiento = new Date(fechaNacimiento);
       const diferencia = Date.now() - nacimiento.getTime();
       const edadDate = new Date(diferencia);
       edad = Math.abs(edadDate.getUTCFullYear() - 1970).toString();
     }
-
     const hoy = new Date();
     const fecha = `${hoy.getDate()}/${hoy.getMonth() + 1}/${hoy.getFullYear()}`;
-
     const stored = localStorage.getItem('birads_resultado');
     let resumen = 'Sin resultados disponibles';
     let birads = 'Sin clasificar';
     let detalles = {};
-
     if (stored) {
       const resultado = JSON.parse(stored);
       detalles = resultado;
@@ -81,7 +72,6 @@ export class ReportComponent implements AfterViewInit {
         resumen = `BI-RADS ${birads} (${vistaTexto})`;
       }
     }
-
     this.datosReporte = {
       paciente: nombre,
       documento: documento,
@@ -92,13 +82,11 @@ export class ReportComponent implements AfterViewInit {
       detalles: detalles
     };
   }
-
   ngAfterViewInit(): void {
     if (this.datosReporte?.detalles) {
       this.renderizarGraficas();
     }
   }
-
   renderizarGraficas() {
     const colores = [
       'rgba(117, 251, 216, 1)',
@@ -107,17 +95,13 @@ export class ReportComponent implements AfterViewInit {
       'rgba(255, 102, 0, 1)',
       'rgba(234, 52, 37, 1)'
     ];
-
     const etiquetas = ['BI-RADS 1', 'BI-RADS 2', 'BI-RADS 3', 'BI-RADS 4', 'BI-RADS 5'];
-
     for (const vista of this.vistas) {
       const datosVista = this.datosReporte?.detalles?.[vista.nombre];
       const probs = datosVista?.probabilidades;
       if (!probs) continue;
-
       const ctx = document.getElementById(vista.id) as HTMLCanvasElement;
       if (!ctx) continue;
-
       new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -148,7 +132,6 @@ export class ReportComponent implements AfterViewInit {
       });
     }
   }
-
   mapVistaLabel(vista: string): string {
     switch (vista.toUpperCase()) {
       case 'L-CC': return 'Cráneo-Caudal Izquierda';
@@ -158,7 +141,6 @@ export class ReportComponent implements AfterViewInit {
       default: return vista;
     }
   }
-
   toggleZoom(vista?: string) {
     if (vista && this.datosReporte?.detalles?.[vista]) {
       this.imagenSeleccionada = this.datosReporte.detalles[vista].image_url;
@@ -170,22 +152,18 @@ export class ReportComponent implements AfterViewInit {
       this.visorActivo = false;
     }
   }
-
   actualizarImagenProcesada(event: { vista: string; dataUrl: string }) {
     const { vista, dataUrl } = event;
     if (vista && this.datosReporte?.detalles?.[vista]) {
       this.datosReporte.detalles[vista].image_url = dataUrl;
     }
   }
-
   cerrarVisor(event: { vista: string; dataUrl: string }) {
     const { vista, dataUrl } = event;
-
     // Actualiza la imagen en el objeto datosReporte
     if (this.datosReporte?.detalles?.[vista]) {
       this.datosReporte.detalles[vista].image_url = dataUrl;
     }
-
     // Cierra el visor
     this.visorActivo = false;
     this.imagenSeleccionada = '';
@@ -217,7 +195,6 @@ export class ReportComponent implements AfterViewInit {
     doc.setFont('helvetica', 'normal');
     doc.text(`${this.datosReporte.fecha}`, 135, y + 15);
     y += 35;
-
     // Leyenda BI-RADS
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -238,7 +215,6 @@ export class ReportComponent implements AfterViewInit {
       y += 7;
     }
     y += 10;
-
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text(`BI-RADS Dominante: BI-RADS ${this.datosReporte.birads}`, 20, y);
@@ -264,7 +240,6 @@ export class ReportComponent implements AfterViewInit {
       }
     }
     y += 10;
-
     // Observaciones del Radiólogo section moved here
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -283,17 +258,14 @@ export class ReportComponent implements AfterViewInit {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(11);
     doc.text('Las imágenes procesadas junto a su análisis se mostrarán a continuación', 105, 285, { align: 'center' });
-
     if (this.datosReporte.detalles && Object.keys(this.datosReporte.detalles).length > 0) {
       y = 300; // Start new content below the text at 285
       for (const vista of Object.keys(this.datosReporte.detalles)) {
         const d = this.datosReporte.detalles[vista];
         if (!d || !d.image_url) continue;
-
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.src = d.image_url;
-
         await new Promise<void>((resolve) => {
           img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -302,22 +274,17 @@ export class ReportComponent implements AfterViewInit {
             const ctx = canvas.getContext('2d');
             if (ctx) ctx.drawImage(img, 0, 0);
             const imgData = canvas.toDataURL('image/jpeg');
-
             doc.addPage();
             let pageY = 30;
-
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text(this.mapVistaLabel(vista), 105, pageY, { align: 'center' });
-
             pageY += 10;
             const imageWidth = 100;
             const imageHeight = 120;
             const imageX = (210 - imageWidth) / 2;
-
             doc.addImage(imgData, 'JPEG', imageX, pageY, imageWidth, imageHeight);
             pageY += imageHeight + 10;
-
             const chartCanvas = document.getElementById(`chart-${vista.toLowerCase().replace('-', '')}`) as HTMLCanvasElement;
             if (chartCanvas) {
               const chartImgData = chartCanvas.toDataURL('image/png');
@@ -326,7 +293,6 @@ export class ReportComponent implements AfterViewInit {
               const chartX = (210 - chartWidth) / 2;
               doc.addImage(chartImgData, 'PNG', chartX, pageY, chartWidth, chartHeight);
             }
-
             resolve();
           };
           img.onerror = () => resolve();
@@ -335,8 +301,8 @@ export class ReportComponent implements AfterViewInit {
     }
     doc.save(`Reporte_${this.datosReporte.paciente}_${this.datosReporte.fecha}.pdf`);
   }
-
   volver() {
     this.router.navigate(['/results']);
   }
 }
+

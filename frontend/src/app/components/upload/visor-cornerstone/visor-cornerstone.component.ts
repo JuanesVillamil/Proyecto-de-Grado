@@ -53,14 +53,12 @@ export class VisorCornerstoneComponent implements AfterViewInit, OnDestroy {
       try {
         cornerstone.enable(this.element);
       } catch (e) {
-        console.warn('Error al habilitar elemento:', e);
       }
       const imageId = this.imagenUrl;
       const isEnabled = cornerstone.getEnabledElements().some(
         (enabled: { element: HTMLElement }) => enabled.element === this.element
       );
       if (!isEnabled) {
-        console.error('❌ El elemento aún no está habilitado. Se canceló la carga de imagen.');
         return;
       }
       cornerstone.loadAndCacheImage(imageId).then((image: any) => {
@@ -86,7 +84,6 @@ export class VisorCornerstoneComponent implements AfterViewInit, OnDestroy {
         cornerstoneTools.setToolActive('Zoom', { mouseButtonMask: 2 });
         cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 1 });
       }).catch((err: unknown) => {
-        console.error('❌ Error al cargar la imagen:', err);
       });
     }, 0);
   }
@@ -149,7 +146,6 @@ export class VisorCornerstoneComponent implements AfterViewInit, OnDestroy {
         this.actualizar.emit({ vista: this.vista, dataUrl });
         this.cerrar.emit({ vista: this.vista, dataUrl });
       } catch (err) {
-        console.warn("Error al cerrar visor:", err);
       }
     }
   }
@@ -159,17 +155,14 @@ export class VisorCornerstoneComponent implements AfterViewInit, OnDestroy {
         try {
           cornerstoneTools.setToolDisabled('Magnify', {});
         } catch (e) {
-          console.warn("No se pudo desactivar la herramienta Magnify:", e);
         }
         try {
           cornerstoneTools.setToolDisabled('Zoom', {});
         } catch (e) {
-          console.warn("No se pudo desactivar la herramienta Zoom:", e);
         }
         try {
           cornerstoneTools.setToolDisabled('Pan', {});
         } catch (e) {
-          console.warn("No se pudo desactivar la herramienta Pan:", e);
         }
         const enabledElements = cornerstone.getEnabledElements();
         const isEnabled = enabledElements.some(
@@ -179,13 +172,11 @@ export class VisorCornerstoneComponent implements AfterViewInit, OnDestroy {
           try {
             cornerstone.disable(this.element);
           } catch (err) {
-            console.warn('Error al intentar deshabilitar el elemento:', err);
           }
         } else {
           console.info('Elemento ya no está registrado como habilitado por cornerstone.');
         }
       } catch (err) {
-        console.warn('Error inesperado durante ngOnDestroy:', err);
       }
     }
   }

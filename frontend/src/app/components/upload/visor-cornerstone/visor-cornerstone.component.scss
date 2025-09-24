@@ -176,7 +176,7 @@
     border: 2px solid #000;
     margin-top: 0px;
     cursor: pointer;
-    transform: translateX(0px); /* Desplazar completamente a la izquierda */
+    transform: translateX(0px);
   }
 
   input[type="range"]::-moz-range-thumb {

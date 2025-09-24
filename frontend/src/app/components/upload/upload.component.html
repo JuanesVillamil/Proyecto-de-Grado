@@ -3,7 +3,15 @@
   <app-navbar></app-navbar>
 </header>
 
-<div class="container-centered">
+<!-- Estado de análisis (pantalla completa mientras se cargan resultados) -->
+<div *ngIf="isProcessing" class="analysis-container">
+  <h2>Analizando imágenes...</h2>
+  <p>Por favor espera mientras procesamos el análisis BI-RADS.</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- Formulario de carga -->
+<div class="container-centered" *ngIf="!isProcessing">
   <h1>Clasificador de Mamografías en Escala BI-RADS</h1>
 
   <!-- Nombre del paciente -->
@@ -35,7 +43,6 @@
 
   <!-- Subida de vistas específicas con etiquetas -->
   <div class="upload-list mt-3">
-
     <label class="upload-item">
       <span class="upload-label">L-CC (Cráneo-Caudal Izquierda)</span>
       <input
@@ -75,7 +82,6 @@
         class="upload-input"
       />
     </label>
-
   </div>
 
   <!-- Imágenes seleccionadas -->
@@ -95,3 +101,46 @@
     Analizar Imágenes
   </button>
 </div>
+
+<style>
+.analysis-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Helvetica Neue', sans-serif;
+  text-align: center;
+}
+
+.analysis-container h2 {
+  font-size: 28px;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.analysis-container p {
+  font-size: 14px;
+  margin-bottom: 2rem;
+}
+
+.analysis-container .spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
