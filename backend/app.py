@@ -2,16 +2,32 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from database import Base, engine, SessionLocal
 import shutil
 import os
 import time
 import pydicom
 import numpy as np
+import models
+from database import engine
+import models
+from fastapi import HTTPException
+from passlib.hash import bcrypt
+from pydantic import BaseModel
+import datetime
+from database import Base, engine, SessionLocal
+from predict_resnet_multiview import predict_birads_per_view
+from database import Base, engine, SessionLocal
+
+
 from PIL import Image
 from predict_resnet_multiview import predict_birads_per_view
 
 app = FastAPI()
 
+Base.metadata.create_all(bind=engine)
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +41,14 @@ TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> str:
     import cv2
@@ -169,3 +193,31 @@ async def predict(
         results[view]["image_url"] = f"http://127.0.0.1:8000/images/{filename}"
 
     return JSONResponse(content=results)
+
+class UsuarioCreate(BaseModel):
+    nombre: str
+    documento: str
+    fecha_nacimiento: datetime.date
+    rol: str
+    password: str
+
+@app.post("/register")
+def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    existe = db.query(models.Usuario).filter_by(documento=usuario.documento).first()
+    if existe:
+        raise HTTPException(status_code=400, detail="El documento ya está registrado")
+
+    hashed_pw = bcrypt.hash(usuario.password)
+
+    nuevo_usuario = models.Usuario(
+        nombre=usuario.nombre,
+        documento=usuario.documento,
+        fecha_nacimiento=usuario.fecha_nacimiento,
+        rol=usuario.rol,
+        password_hash=hashed_pw
+    )
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
+
+    return {"msg": "Usuario registrado con éxito", "id": nuevo_usuario.id}
