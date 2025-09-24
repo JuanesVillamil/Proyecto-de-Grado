@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
@@ -9,10 +10,10 @@ import { Router } from '@angular/router';
   styleUrl: './navbar.scss'
 })
 export class Navbar {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private location: Location) {}
 
   volver() {
-    this.router.navigate(['/']);
+    this.location.back();
   }
 
 }

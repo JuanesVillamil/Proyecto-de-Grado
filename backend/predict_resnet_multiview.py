@@ -42,8 +42,14 @@ def predict_birads_per_view(image_paths: dict):
             probs = torch.nn.functional.softmax(outputs, dim=1)
             confidence, predicted_idx = torch.max(probs, 1)
             birads_category = predicted_idx.item() + 1
+
+            # Convertir tensor a lista de floats en porcentaje
+            probs_percent = probs.squeeze().tolist()
+            probs_percent = [round(p * 100, 2) for p in probs_percent]
+
         results[view] = {
             "birads": birads_category,
-            "confidence": float(confidence)
+            "confidence": round(float(confidence) * 100, 2),
+            "probabilidades": probs_percent  # ← NUEVO
         }
     return results

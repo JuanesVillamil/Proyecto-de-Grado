@@ -19,6 +19,7 @@ export class UploadComponent {
   nombrePaciente: string = '';
   documentoPaciente: string = '';
   fechaNacimiento: string = '';
+  isProcessing: boolean = false;
 
   constructor(
     private router: Router,
@@ -47,19 +48,18 @@ export class UploadComponent {
     localStorage.setItem('documentoPaciente', this.documentoPaciente);
     localStorage.setItem('fechaNacimiento', this.fechaNacimiento);
 
-    this.router.navigate(['/analysis']).then(() => {
-      this.biradsService.analizarImagenes(formData).subscribe({
-        next: (resultado: any) => {
-          console.log('Resultado:', resultado);
-          localStorage.setItem('birads_resultado', JSON.stringify(resultado));
-          this.router.navigate(['/results']);
-        },
-        error: (err: any) => {
-          console.error('Error al analizar las imágenes:', err);
-          alert('Ocurrió un error durante el análisis. Intenta de nuevo.');
-          this.router.navigate(['/upload']);
-        }
-      });
+    this.isProcessing = true;
+
+    this.biradsService.analizarImagenes(formData).subscribe({
+      next: (resultado: any) => {
+        localStorage.setItem('birads_resultado', JSON.stringify(resultado));
+        this.isProcessing = false;
+        this.router.navigate(['/report']);
+      },
+      error: () => {
+        this.isProcessing = false;
+        alert('Ocurrió un error durante el análisis. Intenta de nuevo.');
+      }
     });
   }
 }

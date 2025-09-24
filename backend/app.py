@@ -5,6 +5,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from database import Base, engine, SessionLocal
+from starlette.responses import Response
+class CORSAwareStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response: Response = await super().get_response(path, scope)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
 import shutil
 import os
 import time
@@ -40,7 +48,7 @@ app.add_middleware(
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
+app.mount("/images", CORSAwareStaticFiles(directory=TEMP_DIR), name="images")
 
 
 def get_db():

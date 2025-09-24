@@ -3,81 +3,135 @@
   <app-navbar></app-navbar>
 </header>
 
-<div class="container-centered" #reporte>
-  <h1>Reporte de Análisis BI-RADS</h1>
+<ng-container *ngIf="!mostrarReporte">
+  <div class="container-centered">
+    <h1>Resultados del Análisis BI-RADS</h1>
 
-  <div class="report-info mt-2">
-    <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
-    <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
-    <p><strong>Clasificación más alta:</strong> BI-RADS {{ datosReporte.birads }} (<span style="font-style: italic;">{{ datosReporte.resumen.split('BI-RADS ' + datosReporte.birads)[1]?.replace('(', '').replace(')', '') }}</span>)</p>
-    <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
+    <div class="result-card mt-3">
+      <p *ngIf="analisisExitoso">
+        El análisis de las mamografías se realizó con éxito. Selecciona "Continuar" para ver los resultados.
+      </p>
+      <p *ngIf="!analisisExitoso">
+        No se pudo realizar el análisis. Verifica que hayas subido todas las imágenes correctamente.
+      </p>
+    </div>
+
+      <button class="button-primary" (click)="generarReporte()">
+        {{ analisisExitoso ? 'Continuar' : 'Ver Resultados' }}
+      </button>
   </div>
+</ng-container>
 
-  <!-- Clasificación por vista -->
-  <div class="mt-2" *ngIf="datosReporte.detalles">
-    <h3>Clasificación por Vista</h3>
-    <ul>
-      <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
-        {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
-        ({{ (datosReporte.detalles[vista].confidence * 100) | number:'1.1-2' }}%)
-      </li>
-    </ul>
-  </div>
 
-  <!-- Imágenes procesadas en formato grid -->
-  <div class="mt-2" *ngIf="datosReporte.detalles">
-    <h3>Imágenes Procesadas</h3>
-    <div class="image-grid-grid">
-      <div class="image-item" *ngFor="let vista of objectKeys(datosReporte.detalles)">
-        <p>{{ vista }}</p>
-        <p style="font-style: italic; font-weight: normal; font-size: 0.9rem;">{{ mapVistaLabel(vista) }}</p>
-        <div class="image-wrapper">
-          <img [src]="datosReporte.detalles[vista].image_url" alt="{{ vista }}" (click)="toggleZoom(vista)" />
-        </div>
+<ng-container *ngIf="mostrarReporte">
+  <div class="container-centered" #reporte>
+    <h1>Reporte de Análisis BI-RADS</h1>
+    <div class="report-info mt-2">
+      <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
+      <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
+      <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
+      <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
+    </div>
+    <!-- Clasificación por vista -->
+    <div class="mt-2" *ngIf="datosReporte.detalles">
+      <h3>Clasificación por Vista</h3>
+      <ul>
+        <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
+          {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
+          ({{ datosReporte.detalles[vista].confidence.toFixed(2).replace('.', ',') }}%)
+        </li>
+      </ul>
+    </div>
+    <!-- Imágenes y gráficas -->
+    <div class="mt-2" *ngIf="datosReporte.detalles">
+      <h3>Imágenes Procesadas</h3>
+      <div class="imagen-grafica-grid">
+        <ng-container *ngFor="let vista of vistas">
+          <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
+          <p class="titulo-vista">{{ vista.nombre }}</p>
+          <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
+          <div class="image-wrapper">
+            <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
+                alt="{{ vista.nombre }}"
+                (click)="toggleZoom(vista.nombre)" />
+          </div>
+          <div class="grafica-wrapper">
+            <canvas id="{{ vista.id }}"></canvas>
+          </div>
+          </div>
+        </ng-container>
       </div>
     </div>
+    <div class="observaciones-section" style="margin-top: 3rem;">
+      <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
+      <textarea
+        id="observaciones"
+        [(ngModel)]="observacionesRadiologo"
+        placeholder="Escriba aquí las observaciones o pasos a seguir..."
+        rows="5"
+      ></textarea>
+    </div>
+    <button class="button-primary mt-3" (click)="descargarPDF()">
+      Descargar Reporte
+    </button>
   </div>
+</ng-container>
 
-  <div class="observaciones-section mt-2">
-    <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
-    <textarea
-      id="observaciones"
-      [(ngModel)]="observacionesRadiologo"
-      placeholder="Escriba aquí las observaciones o pasos a seguir..."
-      rows="5"
-    ></textarea>
-  </div>
 
-  <button class="button-primary mt-3" (click)="descargarPDF()">
-    Descargar Reporte
-  </button>
-</div>
-
-<!-- Imagen Ampliada -->
-<div class="zoomed-overlay" *ngIf="zoomedImage" (click)="toggleZoom()">
-  <img [src]="zoomedImage" class="zoomed-image" />
-</div>
-
+<!-- Visor Cornerstone con herramientas -->
+<app-visor-cornerstone
+  *ngIf="visorActivo"
+  [imagenUrl]="imagenSeleccionada"
+  [vista]="vistaSeleccionada"
+  (cerrar)="cerrarVisor($event)"
+  (actualizar)="actualizarImagenProcesada($event)">
+</app-visor-cornerstone>
 <style>
-.image-grid-grid {
+.imagen-grafica-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 2rem;
   margin-top: 1rem;
 }
-.image-item img {
-  width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  border-radius: 8px;
+.imagen-grafica-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.titulo-vista {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+.descripcion-vista {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+}
+.image-wrapper {
+  width: 200px;
+  height: 280px;
   background-color: #fff;
   border: 1px solid #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0rem;
+}
+.image-wrapper img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
   cursor: zoom-in;
 }
-.image-item p {
-  margin-bottom: 0.5rem;
-  text-align: center;
-  font-weight: bold;
+.grafica-wrapper canvas {
+  width: 245px !important;
+  height: 245px !important;
+  margin-top: 0.7rem;
 }
 .zoomed-overlay {
   position: fixed;
@@ -91,8 +145,8 @@
   cursor: zoom-out;
 }
 .zoomed-image {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 75%;
+  max-height: 75%;
   border-radius: 12px;
   transition: transform 0.3s ease-in-out;
 }
