@@ -15,5 +15,9 @@ export class Navbar {
   volver() {
     this.location.back();
   }
+showMenu = false;
 
+cerrarSesion() {
+  // Tu lógica de cerrar sesión
+}
 }

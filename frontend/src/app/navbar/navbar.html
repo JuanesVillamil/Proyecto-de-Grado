@@ -1,12 +1,15 @@
 <div class="Navbar">
-
-  <div class="backButton">
-    <button class="back-button-fixed" (click)="volver()">
-      <span class="back-icon"></span>
+  <div class="navbar-content">
+    <div class="account-menu" (mouseenter)="showMenu=true" (mouseleave)="showMenu=false">
+      <button class="account-btn" [class.active]="showMenu">
+        Mi cuenta
+      </button>
+      <div class="dropdown-menu" *ngIf="showMenu">
+        <a class="dropdown-item">Historial de pacientes</a>
+      </div>
+    </div>
+    <button class="logout-btn" (click)="cerrarSesion()">
+      Cerrar sesión
     </button>
-  </div>
-  <div style="margin: 0 auto; display: flex; gap: 200px;">    <a>Lista de Pacientes</a>
-    <a>Opciones</a>
-    <a>Cerrar Sesión</a>
   </div>
 </div>
