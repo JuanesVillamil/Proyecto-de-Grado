@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -16,7 +17,7 @@ export class RegisterComponent {
   password = '';
   rol = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   submit() {
     if (!this.rol) {
@@ -43,4 +44,16 @@ export class RegisterComponent {
         }
       });
   }
+  showLogin() {
+  document.getElementById('container')?.classList.remove('right-panel-active');
+}
+
+showRegister() {
+  document.getElementById('container')?.classList.add('right-panel-active');
+}
+
+// Agrega este método en register.component.ts
+irALogin() {
+  this.router.navigate(['/login']);
+}
 }

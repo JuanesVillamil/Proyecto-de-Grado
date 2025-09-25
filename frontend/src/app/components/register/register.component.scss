@@ -101,3 +101,24 @@ select:focus {
     font-size: 1.5rem;
   }
 }
+
+// Añade este estilo en register.component.scss
+.button-secondary {
+  width: 100%;
+  padding: 14px 0;
+  background: #f9f7f3;
+  color: #222 !important;
+  border: 1.5px solid #f3ecd7;
+  border-radius: 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(200,180,140,0.10);
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.button-secondary:hover {
+  background: #f3ecd7;
+}
