@@ -60,8 +60,8 @@ export class LoginComponent {
     document.getElementById('container')?.classList.remove('right-panel-active');
   }
 
-  showRegister() {
-    document.getElementById('container')?.classList.add('right-panel-active');
+ showRegister() {
+    this.router.navigate(['/register']);
   }
 
   irARegister() {
