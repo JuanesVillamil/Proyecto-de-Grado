@@ -1,22 +1,20 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, HttpClientModule],
+  imports: [FormsModule],
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss']
+styleUrls: ['./register.component.scss']
+
 })
 export class RegisterComponent {
   nombre = '';
   documento = '';
   fechaNacimiento = '';
   password = '';
-  rol = '';
-
-  constructor(private http: HttpClient) {}
+  rol = '';   
 
   submit() {
     if (!this.rol) {
@@ -24,22 +22,14 @@ export class RegisterComponent {
       return;
     }
 
-    const datos = {
+    console.log('Datos de registro:', {
       nombre: this.nombre,
       documento: this.documento,
-      fecha_nacimiento: this.fechaNacimiento,
-      rol: this.rol,
-      password: this.password
-    };
+      fechaNacimiento: this.fechaNacimiento,
+      password: this.password,
+      rol: this.rol
+    });
 
-    this.http.post('http://localhost:8000/register', datos)
-      .subscribe({
-        next: (resp) => {
-          alert('¡Registro exitoso!');
-        },
-        error: (err) => {
-          alert('Error al registrar: ' + (err.error?.detail || 'Error desconocido'));
-        }
-      });
+    alert(`Registro enviado como ${this.rol}`);
   }
 }

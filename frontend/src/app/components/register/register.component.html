@@ -1,39 +1,34 @@
 <div class="container-centered">
-  <h1>Registro</h1>
+  <h1>Registrarse</h1>
   <form (ngSubmit)="submit()" #registerForm="ngForm">
-    <label for="nombre">Nombre</label>
     <input
       type="text"
-      id="nombre"
-      name="nombre"
-      [(ngModel)]="nombre"
-      required
-      class="mt-2"
-    />
-
-    <label for="documento">Documento</label>
-    <input
-      type="text"
-      id="documento"
+      placeholder="Documento"
       name="documento"
       [(ngModel)]="documento"
       required
       class="mt-2"
     />
 
-    <label for="fechaNacimiento">Fecha de Nacimiento</label>
+    <input
+      type="text"
+      placeholder="Nombre"
+      name="nombre"
+      [(ngModel)]="nombre"
+      required
+      class="mt-2"
+    />
+
     <input
       type="date"
-      id="fechaNacimiento"
+      placeholder="Fecha de nacimiento"
       name="fechaNacimiento"
       [(ngModel)]="fechaNacimiento"
       required
       class="mt-2"
     />
 
-    <label for="rol">Rol</label>
     <select
-      id="rol"
       name="rol"
       [(ngModel)]="rol"
       required
@@ -44,10 +39,9 @@
       <option value="administrador">Administrador</option>
     </select>
 
-    <label for="password">Contraseña</label>
     <input
       type="password"
-      id="password"
+      placeholder="Contraseña"
       name="password"
       [(ngModel)]="password"
       required
@@ -55,7 +49,7 @@
     />
 
     <button type="submit" class="button-primary mt-3">
-      Registrarse
+      Crear cuenta
     </button>
   </form>
 </div>

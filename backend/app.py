@@ -11,6 +11,7 @@ from auth import create_access_token
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from auth import verify_token
+from passlib.hash import bcrypt
 class CORSAwareStaticFiles(StaticFiles):
     async def get_response(self, path, scope):
         response: Response = await super().get_response(path, scope)
@@ -252,10 +253,13 @@ def usuario_protegido(user: dict = Depends(get_current_user)):
     return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
 
 @app.post("/login")
-def login(datos: dict):
-    # Verifica usuario y contraseña con la base de datos
-    usuario = ... # tu lógica de verificación
-    if not usuario:
+def login(datos: dict, db: Session = Depends(get_db)):
+    documento = datos.get("documento")
+    password = datos.get("password")
+
+    usuario = db.query(models.Usuario).filter_by(documento=documento).first()
+    if not usuario or not bcrypt.verify(password, usuario.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    token = create_access_token({"sub": usuario["documento"]})
+
+    token = create_access_token({"sub": usuario.documento})
     return {"access_token": token, "token_type": "bearer"}
