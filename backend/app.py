@@ -6,6 +6,11 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from database import Base, engine, SessionLocal
 from starlette.responses import Response
+from fastapi import FastAPI, HTTPException
+from auth import create_access_token
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from auth import verify_token
 class CORSAwareStaticFiles(StaticFiles):
     async def get_response(self, path, scope):
         response: Response = await super().get_response(path, scope)
@@ -229,3 +234,28 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     db.refresh(nuevo_usuario)
 
     return {"msg": "Usuario registrado con éxito", "id": nuevo_usuario.id}
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+@app.get("/usuario-protegido")
+def usuario_protegido(user: dict = Depends(get_current_user)):
+    return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
+
+@app.post("/login")
+def login(datos: dict):
+    # Verifica usuario y contraseña con la base de datos
+    usuario = ... # tu lógica de verificación
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    token = create_access_token({"sub": usuario["documento"]})
+    return {"access_token": token, "token_type": "bearer"}
