@@ -16,9 +16,6 @@ export class UploadComponent {
   imagenesSeleccionadas: { [key: string]: File } = {};
   imagenesKeys: string[] = [];
 
-  nombrePaciente: string = '';
-  documentoPaciente: string = '';
-  fechaNacimiento: string = '';
   isProcessing: boolean = false;
 
   constructor(
@@ -35,7 +32,7 @@ export class UploadComponent {
   }
 
   analizarImagenes() {
-    if (!this.nombrePaciente || !this.documentoPaciente || !this.fechaNacimiento || this.imagenesKeys.length === 0) {
+    if (this.imagenesKeys.length === 0) {
       return;
     }
 
@@ -43,10 +40,6 @@ export class UploadComponent {
     for (const key of this.imagenesKeys) {
       formData.append(key, this.imagenesSeleccionadas[key]);
     }
-
-    localStorage.setItem('nombrePaciente', this.nombrePaciente);
-    localStorage.setItem('documentoPaciente', this.documentoPaciente);
-    localStorage.setItem('fechaNacimiento', this.fechaNacimiento);
 
     this.isProcessing = true;
 

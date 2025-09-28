@@ -2,82 +2,57 @@
 <header>
   <app-navbar></app-navbar>
 </header>
-
-<ng-container *ngIf="!mostrarReporte">
-  <div class="container-centered">
-    <h1>Resultados del Análisis BI-RADS</h1>
-
-    <div class="result-card mt-3">
-      <p *ngIf="analisisExitoso">
-        El análisis de las mamografías se realizó con éxito. Selecciona "Continuar" para ver los resultados.
-      </p>
-      <p *ngIf="!analisisExitoso">
-        No se pudo realizar el análisis. Verifica que hayas subido todas las imágenes correctamente.
-      </p>
-    </div>
-
-      <button class="button-primary" (click)="generarReporte()">
-        {{ analisisExitoso ? 'Continuar' : 'Ver Resultados' }}
-      </button>
+<div class="container-centered" #reporte>
+  <h1>Reporte de Análisis BI-RADS</h1>
+  <div class="report-info mt-2">
+    <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
+    <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
+    <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
+    <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
   </div>
-</ng-container>
-
-
-<ng-container *ngIf="mostrarReporte">
-  <div class="container-centered" #reporte>
-    <h1>Reporte de Análisis BI-RADS</h1>
-    <div class="report-info mt-2">
-      <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
-      <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
-      <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
-      <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
-    </div>
-    <!-- Clasificación por vista -->
-    <div class="mt-2" *ngIf="datosReporte.detalles">
-      <h3>Clasificación por Vista</h3>
-      <ul>
-        <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
-          {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
-          ({{ datosReporte.detalles[vista].confidence.toFixed(2).replace('.', ',') }}%)
-        </li>
-      </ul>
-    </div>
-    <!-- Imágenes y gráficas -->
-    <div class="mt-2" *ngIf="datosReporte.detalles">
-      <h3>Imágenes Procesadas</h3>
-      <div class="imagen-grafica-grid">
-        <ng-container *ngFor="let vista of vistas">
-          <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
-          <p class="titulo-vista">{{ vista.nombre }}</p>
-          <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
-          <div class="image-wrapper">
-            <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
-                alt="{{ vista.nombre }}"
-                (click)="toggleZoom(vista.nombre)" />
-          </div>
-          <div class="grafica-wrapper">
-            <canvas id="{{ vista.id }}"></canvas>
-          </div>
-          </div>
-        </ng-container>
-      </div>
-    </div>
-    <div class="observaciones-section" style="margin-top: 3rem;">
-      <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
-      <textarea
-        id="observaciones"
-        [(ngModel)]="observacionesRadiologo"
-        placeholder="Escriba aquí las observaciones o pasos a seguir..."
-        rows="5"
-      ></textarea>
-    </div>
-    <button class="button-primary mt-3" (click)="descargarPDF()">
-      Descargar Reporte
-    </button>
+  <!-- Clasificación por vista -->
+  <div class="mt-2" *ngIf="datosReporte.detalles">
+    <h3>Clasificación por Vista</h3>
+    <ul>
+      <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
+        {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
+        ({{ datosReporte.detalles[vista].confidence.toFixed(2).replace('.', ',') }}%)
+      </li>
+    </ul>
   </div>
-</ng-container>
-
-
+  <!-- Imágenes y gráficas -->
+  <div class="mt-2" *ngIf="datosReporte.detalles">
+    <h3>Imágenes Procesadas</h3>
+    <div class="imagen-grafica-grid">
+      <ng-container *ngFor="let vista of vistas">
+        <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
+        <p class="titulo-vista">{{ vista.nombre }}</p>
+        <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
+        <div class="image-wrapper">
+          <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
+               alt="{{ vista.nombre }}"
+               (click)="toggleZoom(vista.nombre)" />
+        </div>
+        <div class="grafica-wrapper">
+          <canvas id="{{ vista.id }}"></canvas>
+        </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+  <div class="observaciones-section" style="margin-top: 3rem;">
+    <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
+    <textarea
+      id="observaciones"
+      [(ngModel)]="observacionesRadiologo"
+      placeholder="Escriba aquí las observaciones o pasos a seguir..."
+      rows="5"
+    ></textarea>
+  </div>
+  <button class="button-primary mt-3" (click)="descargarPDF()">
+    Descargar Reporte
+  </button>
+</div>
 <!-- Visor Cornerstone con herramientas -->
 <app-visor-cornerstone
   *ngIf="visorActivo"

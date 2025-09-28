@@ -10,14 +10,16 @@ import { Location } from '@angular/common';
   styleUrl: './navbar.scss'
 })
 export class Navbar {
+  showMenu = false;
+
   constructor(private router: Router, private location: Location) {}
 
   volver() {
     this.location.back();
   }
-showMenu = false;
 
-cerrarSesion() {
-  // Tu lógica de cerrar sesión
-}
+  cerrarSesion() {
+    // Stub method for cerrarSesion
+  }
+
 }
