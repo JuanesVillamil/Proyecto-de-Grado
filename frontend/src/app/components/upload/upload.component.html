@@ -2,18 +2,19 @@
 <header>
   <app-navbar></app-navbar>
 </header>
-
 <!-- Estado de análisis (pantalla completa mientras se cargan resultados) -->
 <div *ngIf="isProcessing" class="analysis-container">
   <h2>Analizando imágenes...</h2>
   <p>Por favor espera mientras procesamos el análisis BI-RADS.</p>
+  <p style="font-style: italic; max-width: 600px; text-align: center; margin-top: 0.5rem;">
+    Este sistema está diseñado para asistir en la clasificación BI-RADS, 
+    pero la decisión clínica final depende del criterio del radiólogo.
+  </p>
   <div class="spinner"></div>
 </div>
-
 <!-- Formulario de carga -->
 <div class="container-centered" *ngIf="!isProcessing">
   <h1>Clasificador de Mamografías en Escala BI-RADS</h1>
-
   <!-- Subida de vistas específicas con etiquetas -->
   <div class="upload-list mt-3">
     <label class="upload-item">
@@ -25,7 +26,6 @@
         class="upload-input"
       />
     </label>
-
     <label class="upload-item">
       <span class="upload-label">R-CC (Cráneo-Caudal Derecha)</span>
       <input
@@ -35,7 +35,6 @@
         class="upload-input"
       />
     </label>
-
     <label class="upload-item">
       <span class="upload-label">L-MLO (Oblicua Medio-Lateral Izquierda)</span>
       <input
@@ -45,7 +44,6 @@
         class="upload-input"
       />
     </label>
-
     <label class="upload-item">
       <span class="upload-label">R-MLO (Oblicua Medio-Lateral Derecha)</span>
       <input
@@ -56,7 +54,6 @@
       />
     </label>
   </div>
-
   <!-- Imágenes seleccionadas -->
   <div *ngIf="imagenesKeys.length > 0" class="imagenes-list mt-3">
     <div class="imagen-item" *ngFor="let key of imagenesKeys">
@@ -65,16 +62,21 @@
     </div>
   </div>
 
+    <!-- Advertencia -->
+  <div class="mensaje-aviso" style="max-width: 600px; margin: 2.5rem auto 0.5rem; font-size: 0.95rem; text-align: center; color: #444;">      <p><i>Las imágenes seleccionadas serán procesadas por el sistema para realizar una clasificación automatizada en escala BI-RADS.</i></p>
+    <p><i>Recuerde que el resultado es un apoyo diagnóstico y no reemplaza su interpretación clínica como profesional.</i></p>
+  </div>
+
   <!-- Botón de análisis -->
   <button
     (click)="analizarImagenes()"
     [disabled]="imagenesKeys.length === 0"
     class="button-primary mt-3"
+    style="margin-top: 0.1rem;"
   >
     Analizar Imágenes
   </button>
 </div>
-
 <style>
 .analysis-container {
   position: fixed;
@@ -91,18 +93,15 @@
   font-family: 'Helvetica Neue', sans-serif;
   text-align: center;
 }
-
 .analysis-container h2 {
   font-size: 28px;
   margin-bottom: 0.5rem;
   font-weight: bold;
 }
-
 .analysis-container p {
   font-size: 14px;
   margin-bottom: 2rem;
 }
-
 .analysis-container .spinner {
   border: 8px solid #f3f3f3;
   border-top: 8px solid #3498db;
@@ -111,7 +110,6 @@
   height: 60px;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

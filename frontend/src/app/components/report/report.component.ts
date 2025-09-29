@@ -22,10 +22,6 @@ export class ReportComponent implements AfterViewInit {
   }
   @ViewChild('reporte', { static: false }) reporteElement!: ElementRef;
   datosReporte: any = {
-    paciente: 'No ingresado',
-    documento: 'No ingresado',
-    edad: 'No ingresado',
-    fecha: new Date().toLocaleDateString(),
     birads: 'Sin clasificar',
     resumen: '',
     detalles: {}
@@ -41,22 +37,10 @@ export class ReportComponent implements AfterViewInit {
     { id: 'chart-rmlo', nombre: 'R-MLO', descripcion: 'Oblicua Medio-Lateral Derecha' }
   ];
   constructor(private router: Router) {
-    const nombre = localStorage.getItem('nombrePaciente') || 'No ingresado';
-    const documento = localStorage.getItem('documentoPaciente') || 'No ingresado';
-    const fechaNacimiento = localStorage.getItem('fechaNacimiento');
-    let edad = 'No ingresado';
-    if (fechaNacimiento) {
-      const nacimiento = new Date(fechaNacimiento);
-      const diferencia = Date.now() - nacimiento.getTime();
-      const edadDate = new Date(diferencia);
-      edad = Math.abs(edadDate.getUTCFullYear() - 1970).toString();
-    }
-    const hoy = new Date();
-    const fecha = `${hoy.getDate()}/${hoy.getMonth() + 1}/${hoy.getFullYear()}`;
-    const stored = localStorage.getItem('birads_resultado');
-    let resumen = 'Sin resultados disponibles';
     let birads = 'Sin clasificar';
+    let resumen = 'Sin resultados disponibles';
     let detalles = {};
+    const stored = localStorage.getItem('birads_resultado');
     if (stored) {
       const resultado = JSON.parse(stored);
       detalles = resultado;
@@ -73,10 +57,6 @@ export class ReportComponent implements AfterViewInit {
       }
     }
     this.datosReporte = {
-      paciente: nombre,
-      documento: documento,
-      edad: edad,
-      fecha: fecha,
       birads: birads,
       resumen: resumen,
       detalles: detalles
@@ -116,8 +96,7 @@ export class ReportComponent implements AfterViewInit {
           responsive: true,
           plugins: {
             legend: {
-              position: 'bottom',
-              labels: { font: { size: 13 } }
+              display: false
             },
             tooltip: {
               callbacks: {
@@ -152,18 +131,9 @@ export class ReportComponent implements AfterViewInit {
       this.visorActivo = false;
     }
   }
-  actualizarImagenProcesada(event: { vista: string; dataUrl: string }) {
-    const { vista, dataUrl } = event;
-    if (vista && this.datosReporte?.detalles?.[vista]) {
-      this.datosReporte.detalles[vista].image_url = dataUrl;
-    }
-  }
   cerrarVisor(event: { vista: string; dataUrl: string }) {
     const { vista, dataUrl } = event;
-    // Actualiza la imagen en el objeto datosReporte
-    if (this.datosReporte?.detalles?.[vista]) {
-      this.datosReporte.detalles[vista].image_url = dataUrl;
-    }
+
     // Cierra el visor
     this.visorActivo = false;
     this.imagenSeleccionada = '';
@@ -176,25 +146,7 @@ export class ReportComponent implements AfterViewInit {
     doc.setFont('helvetica', 'bold');
     doc.text('Reporte de Análisis BI-RADS', 105, y, { align: 'center' });
     y += 10;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.rect(20, y, 170, 20);
-    doc.text('Paciente:', 25, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${this.datosReporte.paciente}`, 50, y + 7);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Documento:', 110, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${this.datosReporte.documento}`, 145, y + 7);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Edad:', 25, y + 15);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${this.datosReporte.edad} años`, 50, y + 15);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fecha:', 110, y + 15);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${this.datosReporte.fecha}`, 135, y + 15);
-    y += 35;
+
     // Leyenda BI-RADS
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -240,13 +192,13 @@ export class ReportComponent implements AfterViewInit {
       }
     }
     y += 10;
-    // Observaciones del Radiólogo section moved here
+    
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     const observaciones = this.observacionesLimitadas || 'Sin observaciones añadidas.';
     const obsLines = doc.splitTextToSize(observaciones, 160);
     const obsHeight = obsLines.length * 7 + 10;
-    // Position Observaciones so it ends just above y=285
+  
     const obsY = 285 - obsHeight - 5;
     doc.rect(20, obsY, 170, obsHeight);
     doc.setFont('helvetica', 'bold');
@@ -254,10 +206,11 @@ export class ReportComponent implements AfterViewInit {
     doc.setFont('helvetica', 'normal');
     doc.text(obsLines, 25, obsY + 14);
     
-    // Add the italic text above at y=285
+
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(11);
     doc.text('Las imágenes procesadas junto a su análisis se mostrarán a continuación', 105, 285, { align: 'center' });
+    doc.text('El sistema actúa como herramienta de apoyo para la toma de decisiones clínicas, no como diagnóstico definitivo.', 105, 292, { align: 'center' });
     if (this.datosReporte.detalles && Object.keys(this.datosReporte.detalles).length > 0) {
       y = 300; // Start new content below the text at 285
       for (const vista of Object.keys(this.datosReporte.detalles)) {
@@ -299,7 +252,9 @@ export class ReportComponent implements AfterViewInit {
         });
       }
     }
-    doc.save(`Reporte_${this.datosReporte.paciente}_${this.datosReporte.fecha}.pdf`);
+    const fecha = new Date();
+    const timestamp = `${fecha.getFullYear()}-${(fecha.getMonth()+1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}_${fecha.getHours().toString().padStart(2, '0')}-${fecha.getMinutes().toString().padStart(2, '0')}`;
+    doc.save(`Reporte_BI-RADS_${timestamp}.pdf`);
   }
   volver() {
     this.router.navigate(['/results']);

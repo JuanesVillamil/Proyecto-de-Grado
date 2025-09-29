@@ -1,45 +1,64 @@
-<!-- Header -->
 <header>
   <app-navbar></app-navbar>
 </header>
 <div class="container-centered" #reporte>
   <h1>Reporte de Análisis BI-RADS</h1>
-  <div class="report-info mt-2">
-    <p><strong>Paciente:</strong> {{ datosReporte.paciente }}</p>
-    <p><strong>Edad:</strong> {{ datosReporte.edad }} años</p>
-    <p><strong>BI-RADS Dominante:</strong> BI-RADS {{ datosReporte.birads }}</p>
-    <p><strong>Fecha:</strong> {{ datosReporte.fecha }}</p>
+
+  <div class="report-info mt-2" style="text-align: center; margin-bottom: 1rem;">
+    <h3 style="text-align: center">BI-RADS Dominante</h3>
+    <h1 style="font-size: 3rem; margin: 0;">BI-RADS {{ datosReporte.birads }}</h1>
+    <p style="max-width: 600px; margin: 0 auto; font-size: 1rem">
+      El estudio indica que la mamografía más representativa sugiere una categoría BI-RADS {{ datosReporte.birads }}
+      <ng-container [ngSwitch]="datosReporte.birads">
+        <ng-container *ngSwitchCase="'1'"><i>(Negativo)</i></ng-container>
+        <ng-container *ngSwitchCase="'2'"><i>(Hallazgos benignos)</i></ng-container>
+        <ng-container *ngSwitchCase="'3'"><i>(Probablemente benigno &lt;2%)</i></ng-container>
+        <ng-container *ngSwitchCase="'4'"><i>(Sospechoso, biopsia recomendada)</i></ng-container>
+        <ng-container *ngSwitchCase="'5'"><i>(Altamente sugestivo de malignidad)</i></ng-container>
+        <ng-container *ngSwitchDefault></ng-container>
+      </ng-container>, de acuerdo con la probabilidad asignada por el sistema.
+    </p>
   </div>
+
   <!-- Clasificación por vista -->
   <div class="mt-2" *ngIf="datosReporte.detalles">
-    <h3>Clasificación por Vista</h3>
-    <ul>
+    <h3 style="text-align: center">Clasificación por Vista</h3>
+    <ul style="text-align: center; list-style: none; padding: 0;">
       <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
-        {{ vista }}: BI-RADS {{ datosReporte.detalles[vista].birads }}
+        <i>{{ vista }}</i>: BI-RADS {{ datosReporte.detalles[vista].birads }}
         ({{ datosReporte.detalles[vista].confidence.toFixed(2).replace('.', ',') }}%)
       </li>
     </ul>
   </div>
+
   <!-- Imágenes y gráficas -->
   <div class="mt-2" *ngIf="datosReporte.detalles">
-    <h3>Imágenes Procesadas</h3>
+    <h3 style="text-align: center">Imágenes Procesadas</h3>
     <div class="imagen-grafica-grid">
       <ng-container *ngFor="let vista of vistas">
         <div class="imagen-grafica-item" *ngIf="datosReporte.detalles[vista.nombre]?.image_url">
-        <p class="titulo-vista">{{ vista.nombre }}</p>
-        <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
-        <div class="image-wrapper">
-          <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
-               alt="{{ vista.nombre }}"
-               (click)="toggleZoom(vista.nombre)" />
-        </div>
-        <div class="grafica-wrapper">
-          <canvas id="{{ vista.id }}"></canvas>
-        </div>
+          <p class="titulo-vista">{{ vista.nombre }}</p>
+          <p class="descripcion-vista">{{ mapVistaLabel(vista.nombre) }}</p>
+          <div class="image-wrapper">
+            <img [src]="datosReporte?.detalles?.[vista.nombre]?.image_url"
+                 alt="{{ vista.nombre }}"
+                 (click)="toggleZoom(vista.nombre)" />
+          </div>
+          <div class="grafica-wrapper">
+            <canvas id="{{ vista.id }}"></canvas>
+          </div>
         </div>
       </ng-container>
     </div>
+    <div class="leyenda-general">
+      <div class="leyenda-color" style="background-color: #75fbd8"></div> BI-RADS 1
+      <div class="leyenda-color" style="background-color: #75fb4c"></div> BI-RADS 2
+      <div class="leyenda-color" style="background-color: #fefb53"></div> BI-RADS 3
+      <div class="leyenda-color" style="background-color: #ff6600"></div> BI-RADS 4
+      <div class="leyenda-color" style="background-color: #ea3425"></div> BI-RADS 5
+    </div>
   </div>
+
   <div class="observaciones-section" style="margin-top: 3rem;">
     <label for="observaciones"><strong>Observaciones del Radiólogo:</strong></label>
     <textarea
@@ -49,18 +68,25 @@
       rows="5"
     ></textarea>
   </div>
+
+  <div class="mensaje-aviso" style="max-width: 600px; margin: 1.5rem auto 0.5rem; font-size: 0.95rem; text-align: center; color: #444;">      
+    <p><i>Este reporte ha sido generado por un sistema de inteligencia artificial entrenado para clasificar mamografías según la escala BI-RADS.</i></p>
+    <p><i>Se recomienda validar estos hallazgos con criterios clínicos y experiencia profesional. Este resultado no sustituye la interpretación médica.</i></p>
+  </div>
+
   <button class="button-primary mt-3" (click)="descargarPDF()">
     Descargar Reporte
   </button>
 </div>
+
 <!-- Visor Cornerstone con herramientas -->
 <app-visor-cornerstone
   *ngIf="visorActivo"
   [imagenUrl]="imagenSeleccionada"
   [vista]="vistaSeleccionada"
-  (cerrar)="cerrarVisor($event)"
-  (actualizar)="actualizarImagenProcesada($event)">
+  (cerrar)="cerrarVisor($event)">
 </app-visor-cornerstone>
+
 <style>
 .imagen-grafica-grid {
   display: grid;
@@ -104,9 +130,26 @@
   cursor: zoom-in;
 }
 .grafica-wrapper canvas {
-  width: 245px !important;
-  height: 245px !important;
+  width: 175px !important;
+  height: 175px !important;
   margin-top: 0.7rem;
+}
+.leyenda-general {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  gap: 1.2rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+.leyenda-color {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border-radius: 3px;
+  margin-right: 6px;
 }
 .zoomed-overlay {
   position: fixed;

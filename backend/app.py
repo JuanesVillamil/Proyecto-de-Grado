@@ -67,7 +67,14 @@ def get_db():
 def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> str:
     import cv2
 
+    # Normalizar extensión
     extension = upload_file.filename.split('.')[-1].lower()
+    if extension == "dicom":
+        extension = "dcm"
+    elif extension in ["tif", "tiff"]:
+        extension = "tif"
+
+    # Nombre final con timestamp
     timestamp = str(int(time.time() * 1000))
     nombre_final = f"{nombre_archivo}_{timestamp}.png"
     destino = os.path.join(TEMP_DIR, nombre_final)
@@ -77,10 +84,7 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
     with open(temp_path, "wb") as temp:
         shutil.copyfileobj(upload_file.file, temp)
 
-    # Tratar .dicom igual que .dcm
-    if extension == "dicom":
-        extension = "dcm"
-
+    # Procesamiento de DICOM
     if extension == "dcm":
         try:
             ds = pydicom.dcmread(temp_path, force=True)
@@ -97,14 +101,14 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             arr = clahe.apply(arr)
 
-            # Aplicar gamma correction si la imagen es muy brillante
+            # Gamma correction si muy brillante
             mean_val = np.mean(arr)
             if mean_val > 200:
                 gamma = 0.6
                 look_up = np.array([((i / 255.0) ** gamma) * 255 for i in range(256)]).astype("uint8")
                 arr = cv2.LUT(arr, look_up)
 
-            # Recorte automático mejorado
+            # Recorte automático
             blurred = cv2.GaussianBlur(arr, (5, 5), 0)
             _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((20, 20), np.uint8))
@@ -132,7 +136,7 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
                 cropped_ratio = cropped.shape[1] / orig_width
 
                 if cropped_ratio < 0.4:
-                    print("⚠️ Recorte rechazado: tejido demasiado estrecho. Intentando centrar región.")
+                    # Forzar recorte más ancho
                     x_center = (x0 + x1) // 2
                     crop_width = max(int(0.5 * orig_width), min_width)
                     x0 = max(0, x_center - crop_width // 2)
@@ -148,29 +152,39 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
                     arr = cropped
 
             im = Image.fromarray(arr).convert("RGB")
+
+            # Redimensionar si <224
             if im.width < 224 or im.height < 224:
-                # Redimensionar conservando aspecto si es menor a 224
                 scale = 224 / min(im.width, im.height)
                 new_size = (int(im.width * scale), int(im.height * scale))
                 im = im.resize(new_size, Image.LANCZOS)
+
             im.save(destino)
+
         except Exception as e:
             raise ValueError("No se pudo procesar el archivo DICOM. Verifique su integridad.")
+
+    # Procesamiento de imágenes estándar (JPG, PNG, TIF)
     else:
         try:
             with open(temp_path, "rb") as f:
                 img_check = Image.open(f)
                 img_check.load()
+
             im = Image.open(temp_path).convert("RGB")
+
+            # Redimensionar si <224
             if im.width < 224 or im.height < 224:
-                # Redimensionar conservando aspecto si es menor a 224
                 scale = 224 / min(im.width, im.height)
                 new_size = (int(im.width * scale), int(im.height * scale))
                 im = im.resize(new_size, Image.LANCZOS)
+
             im.save(destino)
+
         except Exception:
             raise ValueError("Archivo de imagen no válido o corrupto.")
 
+    # Eliminar archivo temporal
     os.remove(temp_path)
     return destino
 
