@@ -22,4 +22,8 @@ export class Navbar {
     // Stub method for cerrarSesion
   }
 
+  Informacion() {
+    this.router.navigate(['/info']);
+  }
+
 }

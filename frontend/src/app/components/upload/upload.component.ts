@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BiradsService } from '../../services/birads.service';
 import { FormsModule } from '@angular/forms';
-import { Navbar } from "../../navbar/navbar";
+import { Navbar } from "../navbar/navbar";
 @Component({
   standalone: true,
   selector: 'app-upload',

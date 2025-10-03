@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { jsPDF } from 'jspdf';
-import { Navbar } from "../../navbar/navbar";
+import { Navbar } from "../navbar/navbar";
 import { Chart } from 'chart.js/auto';
-import { VisorCornerstoneComponent } from '../upload/visor-cornerstone/visor-cornerstone.component';
+import { VisorCornerstoneComponent } from './visor-cornerstone/visor-cornerstone.component';
 @Component({
   standalone: true,
   selector: 'app-report',
