@@ -1,59 +1,60 @@
 <div class="container-centered">
   <h1>Registrarse</h1>
-  <form (ngSubmit)="submit()" #registerForm="ngForm">
-    <input
-      type="text"
-      placeholder="Documento"
-      name="documento"
-      [(ngModel)]="documento"
-      required
-      class="mt-2"
-    />
+  <form (ngSubmit)="submit()" #registerForm="ngForm" class="register-form">
 
-    <input
-      type="text"
-      placeholder="Nombre"
-      name="nombre"
-      [(ngModel)]="nombre"
-      required
-      class="mt-2"
-    />
+    <div class="form-row">
+      <input
+        type="text"
+        placeholder="Documento"
+        name="documento"
+        [(ngModel)]="documento"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Nombre"
+        name="nombre"
+        [(ngModel)]="nombre"
+        required
+      />
+    </div>
 
-    <input
-      type="date"
-      placeholder="Fecha de nacimiento"
-      name="fechaNacimiento"
-      [(ngModel)]="fechaNacimiento"
-      required
-      class="mt-2"
-    />
+    <div class="form-row">
+      <input
+        type="date"
+        placeholder="Fecha de nacimiento"
+        name="fechaNacimiento"
+        [(ngModel)]="fechaNacimiento"
+        required
+      />
+      <select
+        name="rol"
+        [(ngModel)]="rol"
+        required
+      >
+        <option value="" disabled selected>Seleccione un rol</option>
+        <option value="radiologo">Radiólogo</option>
+        <option value="administrador">Administrador</option>
+      </select>
+    </div>
 
-    <select
-      name="rol"
-      [(ngModel)]="rol"
-      required
-      class="mt-2"
-    >
-      <option value="" disabled selected>Seleccione un rol</option>
-      <option value="radiologo">Radiólogo</option>
-      <option value="administrador">Administrador</option>
-    </select>
+    <div class="form-row">
+      <input
+        type="password"
+        placeholder="Contraseña"
+        name="password"
+        [(ngModel)]="password"
+        required
+      />
+    </div>
 
-    <input
-      type="password"
-      placeholder="Contraseña"
-      name="password"
-      [(ngModel)]="password"
-      required
-      class="mt-2"
-    />
-
-    <button type="submit" class="button-primary mt-3">
-      Crear cuenta
-    </button>
-    <!-- Agrega este botón al final de tu formulario de registro -->
-<button class="button-secondary mt-2" type="button" (click)="irALogin()">
-  ¿Ya tienes cuenta? Inicia sesión
-</button>
+    <div class="button-group mt-3">
+      <button type="submit" class="button-primary mt-3">
+        Crear cuenta
+      </button>
+      <button class="button-secondary mt-3" type="button" (click)="irALogin()">
+        ¿Ya tienes cuenta? Inicia sesión
+      </button>
+    </div>
   </form>
 </div>
