@@ -9,8 +9,8 @@
 
 html, body {
   height: 100%;
-  font-family: 'Helvetica Neue', sans-serif;
-  background-color: #f8f9fa;
+  font-family: "Merriweather", serif;
+  background-color: #F6F6F6;
   color: #111;
   scroll-behavior: smooth;
   padding-top: 80px;
@@ -121,9 +121,9 @@ textarea:focus {
   outline: none;
 }
 
-/* Botones primarios negros redondeados */
+/* Botones primarios redondeados */
 .button-primary {
-  background-color: #000;
+  background-color: #09A599;
   color: #fff;
   padding: 12px 24px;
   border: none;
@@ -136,7 +136,7 @@ textarea:focus {
 }
 
 .button-primary:hover {
-  background-color: #222;
+  background-color: #076d65;
 }
 
 .button-primary:disabled {
