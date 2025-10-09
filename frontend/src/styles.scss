@@ -10,7 +10,7 @@
 html, body {
   height: 100%;
   font-family: "Merriweather", serif;
-  background-color: #F6F6F6;
+  background-color: #faf8ed;
   color: #111;
   scroll-behavior: smooth;
   padding-top: 80px;
@@ -26,8 +26,8 @@ html, body {
 }
 
 .upload-item {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: #fff0db;
+  border: 1px solid #d2bd96;
   border-radius: 8px;
   padding: 1rem;
   font-size: 0.95rem;
@@ -107,7 +107,8 @@ select[name="rol"],
 textarea {
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  background: #fff0db;
+  border: 1px solid #d2bd96;
   width: 100%;
   max-width: 500px;
   margin: 0.5rem 0;
@@ -123,8 +124,8 @@ textarea:focus {
 
 /* Botones primarios redondeados */
 .button-primary {
-  background-color: #09A599;
-  color: #fff;
+  background-color: #d2bd96;
+  color: #000;
   padding: 12px 24px;
   border: none;
   border-radius: 25px;
@@ -136,17 +137,17 @@ textarea:focus {
 }
 
 .button-primary:hover {
-  background-color: #076d65;
+  background-color: #c8ae7e;
 }
 
 .button-primary:disabled {
-  background-color: #999;
+  background-color: #fff0db;
   cursor: not-allowed;
 }
 
 /* Botones secundarios grises */
 .button-secondary {
-  background-color: #e0e0e0;
+  background-color: #fff0db;
   color: #000;
   padding: 12px 20px;
   border: none;
@@ -158,7 +159,7 @@ textarea:focus {
 }
 
 .button-secondary:hover {
-  background-color: #bdbdbd;
+  background-color: #eae3c9;
 }
 
 /* Botones blancos */
@@ -233,7 +234,7 @@ img {
 }
 
 .imagen-item {
-  background: #fff;
+  background: #d2bd96;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 0.75rem 1rem;
@@ -253,17 +254,6 @@ img {
   color: #555;
   word-break: break-all;
   text-align: right;
-}
-
-/* Spinner */
-.spinner {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #000 !important;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
-  margin-top: 20px;
 }
 
 /* Slider de cornerstone */
@@ -314,10 +304,5 @@ img {
   background: #fff;
   border: 2px solid #000;
   cursor: pointer;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 

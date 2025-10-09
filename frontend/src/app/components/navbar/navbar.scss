@@ -6,7 +6,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
+  background-color: #d2bd96;
   padding: 18px 30px;
   border-bottom: 1px solid #ccc;
   z-index: 1000;
@@ -14,6 +14,7 @@
 }
 
 .Navbar a {
+  font-family: "Merriweather", serif;
   font-weight: 500;
   font-size: 17px;
   color: #333;
