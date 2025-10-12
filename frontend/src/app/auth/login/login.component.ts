@@ -28,7 +28,13 @@ export class LoginComponent {
     this.http.post<any>('http://localhost:8000/login', datos).subscribe({
       next: (resp) => {
         if (resp.access_token) {
+          // Guardar token y datos del usuario
           localStorage.setItem('token', resp.access_token);
+          if (resp.user) {
+            localStorage.setItem('user', JSON.stringify(resp.user));
+          }
+          
+          // Redirigir a la página principal de la aplicación
           this.router.navigate(['/upload']);
         }
       },

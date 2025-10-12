@@ -19,7 +19,19 @@ export class Navbar {
   }
 
   cerrarSesion() {
-    // Stub method for cerrarSesion
+    // Mostrar confirmación antes de cerrar sesión
+    const confirmar = confirm('¿Estás seguro de que quieres cerrar sesión?');
+    
+    if (confirmar) {
+      // Limpiar el token y datos del usuario del localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Redirigir a la pantalla principal (login)
+      this.router.navigate(['/login']);
+      
+      console.log('Sesión cerrada exitosamente');
+    }
   }
 
   Informacion() {

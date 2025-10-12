@@ -351,3 +351,11 @@ def login(datos: dict):
     except Exception as e:
         print(f"Error en login: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/logout")
+def logout():
+    """
+    Endpoint de logout - En JWT no necesitamos hacer nada en el servidor
+    ya que el token se maneja en el cliente, pero es útil para logging
+    """
+    return {"message": "Sesión cerrada exitosamente"}
