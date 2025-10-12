@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from sqlalchemy.orm import Session
+import config  # Importar configuración antes de database
 from database import Base, engine, SessionLocal
 from starlette.responses import Response
 from fastapi import FastAPI, HTTPException
@@ -32,16 +33,16 @@ from passlib.hash import bcrypt
 from pydantic import BaseModel
 import datetime
 from database import Base, engine, SessionLocal
-from predict_resnet_multiview import predict_birads_per_view
+# from predict_resnet_multiview import predict_birads_per_view
 from database import Base, engine, SessionLocal
 
 
 from PIL import Image
-from predict_resnet_multiview import predict_birads_per_view
+# from predict_resnet_multiview import predict_birads_per_view
 
 app = FastAPI()
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)  # Comentado temporalmente por problemas de codificación
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
@@ -56,6 +57,14 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 
 app.mount("/images", CORSAwareStaticFiles(directory=TEMP_DIR), name="images")
 
+# Endpoint de salud que no requiere base de datos
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Backend funcionando correctamente"}
+
+@app.get("/")
+def root():
+    return {"message": "API de BI-RADS funcionando", "docs": "/docs"}
 
 def get_db():
     db = SessionLocal()
@@ -214,11 +223,15 @@ async def predict(
     if not image_paths:
         return JSONResponse(content={"error": "No se recibió ninguna imagen válida."}, status_code=400)
 
-    results = predict_birads_per_view(image_paths)
-
+    # results = predict_birads_per_view(image_paths)
+    # Respuesta temporal sin predicción ML
+    results = {}
     for view, path in image_paths.items():
         filename = os.path.basename(path)
-        results[view]["image_url"] = f"http://127.0.0.1:8000/images/{filename}"
+        results[view] = {
+            "birads": "Predicción temporalmente deshabilitada",
+            "image_url": f"http://127.0.0.1:8000/images/{filename}"
+        }
 
     return JSONResponse(content=results)
 
@@ -230,25 +243,49 @@ class UsuarioCreate(BaseModel):
     password: str
 
 @app.post("/register")
-def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    existe = db.query(models.Usuario).filter_by(documento=usuario.documento).first()
-    if existe:
-        raise HTTPException(status_code=400, detail="El documento ya está registrado")
-
-    hashed_pw = bcrypt.hash(usuario.password)
-
-    nuevo_usuario = models.Usuario(
-        nombre=usuario.nombre,
-        documento=usuario.documento,
-        fecha_nacimiento=usuario.fecha_nacimiento,
-        rol=usuario.rol,
-        password_hash=hashed_pw
-    )
-    db.add(nuevo_usuario)
-    db.commit()
-    db.refresh(nuevo_usuario)
-
-    return {"msg": "Usuario registrado con éxito", "id": nuevo_usuario.id}
+def registrar_usuario(usuario: UsuarioCreate):
+    try:
+        # Usar subprocess para evitar problemas de codificación con psycopg2
+        import subprocess
+        
+        # Escapar comillas en los datos
+        documento = usuario.documento.replace("'", "''")
+        nombre = usuario.nombre.replace("'", "''")
+        fecha = usuario.fecha_nacimiento.strftime('%Y-%m-%d')
+        rol = usuario.rol.replace("'", "''")
+        password_hash = bcrypt.hash(usuario.password)
+        
+        # Verificar si ya existe
+        check_sql = f"SELECT COUNT(*) FROM usuarios WHERE documento = '{documento}';"
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-t", "-c", check_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0 and int(result.stdout.strip()) > 0:
+            raise HTTPException(status_code=400, detail="El documento ya está registrado")
+        
+        # Insertar nuevo usuario
+        insert_sql = f"INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, password_hash) VALUES ('{documento}', '{nombre}', '{fecha}', '{rol}', '{password_hash}');"
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-c", insert_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return {"message": "Usuario registrado exitosamente"}
+        else:
+            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
+                
+    except HTTPException:
+        # Re-lanzar HTTPExceptions específicas
+        raise
+    except Exception as e:
+        # Manejar otros errores
+        print(f"Error en registro: {str(e)}")  # Para debug
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -267,13 +304,50 @@ def usuario_protegido(user: dict = Depends(get_current_user)):
     return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
 
 @app.post("/login")
-def login(datos: dict, db: Session = Depends(get_db)):
-    documento = datos.get("documento")
-    password = datos.get("password")
-
-    usuario = db.query(models.Usuario).filter_by(documento=documento).first()
-    if not usuario or not bcrypt.verify(password, usuario.password_hash):
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
-
-    token = create_access_token({"sub": usuario.documento})
-    return {"access_token": token, "token_type": "bearer"}
+def login(datos: dict):
+    try:
+        documento = datos.get("documento", "").replace("'", "''")
+        password = datos.get("password", "")
+        
+        if not documento or not password:
+            raise HTTPException(status_code=400, detail="Documento y contraseña son requeridos")
+        
+        # Buscar usuario en la base de datos usando subprocess
+        import subprocess
+        
+        query_sql = f"SELECT documento, nombre, password_hash FROM usuarios WHERE documento = '{documento}';"
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-t", "-c", query_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail="Error de conexión a la base de datos")
+        
+        lines = result.stdout.strip().split('\n')
+        if not lines or lines[0].strip() == '':
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+        # Parsear resultado
+        user_data = lines[0].strip().split('|')
+        if len(user_data) < 3:
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+        stored_documento = user_data[0].strip()
+        stored_nombre = user_data[1].strip()
+        stored_password_hash = user_data[2].strip()
+        
+        # Verificar contraseña
+        if not bcrypt.verify(password, stored_password_hash):
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+        # Crear token
+        access_token = create_access_token(data={"sub": stored_documento})
+        return {"access_token": access_token, "token_type": "bearer", "user": {"documento": stored_documento, "nombre": stored_nombre}}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en login: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
