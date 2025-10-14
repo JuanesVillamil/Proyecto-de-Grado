@@ -13,6 +13,16 @@ CREATE TABLE IF NOT EXISTS usuarios (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Crear tabla reportes si no existe
+CREATE TABLE IF NOT EXISTS reportes (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resultado_birads VARCHAR(20) NOT NULL,
+    detalles_json TEXT NOT NULL,
+    nombre_paciente VARCHAR(100)
+);
+
 -- Insertar usuario de prueba (opcional)
 -- Contraseña: admin123
 INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, observaciones, password_hash) 

@@ -13,6 +13,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from auth import verify_token
 from passlib.hash import bcrypt
+import json
+import datetime
 class CORSAwareStaticFiles(StaticFiles):
     async def get_response(self, path, scope):
         response: Response = await super().get_response(path, scope)
@@ -39,12 +41,12 @@ from PIL import Image
 app = FastAPI()
 
 # Crear tablas automáticamente cuando inicia la aplicación
-# NOTA: Las tablas se crean automáticamente por Docker usando init_db.sql
-# try:
-#     Base.metadata.create_all(bind=engine)
-#     print("✅ Tablas de base de datos creadas/verificadas exitosamente")
-# except Exception as e:
-#     print(f"⚠️ Advertencia creando tablas: {e}")
+# NOTA: Las tablas se crean automáticamente por Docker Y por SQLAlchemy
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tablas de base de datos creadas/verificadas exitosamente")
+except Exception as e:
+    print(f"⚠️ Advertencia creando tablas: {e}")
 print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 
 # Middleware CORS
@@ -206,7 +208,9 @@ async def predict(
     l_cc: UploadFile = File(None),
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
-    r_mlo: UploadFile = File(None)
+    r_mlo: UploadFile = File(None),
+    usuario_id: int = None,
+    nombre_paciente: str = None
 ):
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
@@ -231,12 +235,16 @@ async def predict(
     results = {}
     import random
     
+    birads_counts = {}
     for view, path in image_paths.items():
         filename = os.path.basename(path)
         
         # Simular clasificación BI-RADS (temporal)
         birads_simulado = random.randint(1, 5)
         confidence_simulado = round(random.uniform(75.0, 95.0), 2)
+        
+        # Contar BI-RADS para determinar el más frecuente
+        birads_counts[birads_simulado] = birads_counts.get(birads_simulado, 0) + 1
         
         # Generar probabilidades simuladas
         probs = [random.uniform(0, 30) for _ in range(5)]
@@ -251,6 +259,49 @@ async def predict(
             "image_url": f"http://127.0.0.1:8000/images/{filename}",
             "note": "Resultado simulado - Modelo ML temporalmente deshabilitado"
         }
+    
+    # Determinar BI-RADS más frecuente o el más alto
+    if birads_counts:
+        resultado_birads_principal = max(birads_counts.keys())
+    else:
+        resultado_birads_principal = 1
+    
+    # Guardar el reporte en la base de datos si se proporciona usuario_id
+    if usuario_id:
+        try:
+            import subprocess
+            
+            # Preparar los datos para insertar
+            detalles_json = json.dumps(results, ensure_ascii=False)
+            detalles_escaped = detalles_json.replace("'", "''")
+            nombre_paciente_escaped = (nombre_paciente or "Sin especificar").replace("'", "''")
+            
+            # Insertar reporte usando subprocess
+            insert_sql = f"""
+            INSERT INTO reportes (usuario_id, resultado_birads, detalles_json, nombre_paciente) 
+            VALUES ({usuario_id}, 'BI-RADS {resultado_birads_principal}', '{detalles_escaped}', '{nombre_paciente_escaped}');
+            """
+            
+            result = subprocess.run([
+                "docker", "exec", "-i", "birads_postgres", 
+                "psql", "-U", "postgres", "-d", "birads_db", 
+                "-c", insert_sql
+            ], capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                results["reporte_guardado"] = True
+                results["reporte_info"] = {
+                    "usuario_id": usuario_id,
+                    "resultado_birads": f"BI-RADS {resultado_birads_principal}",
+                    "nombre_paciente": nombre_paciente or "Sin especificar"
+                }
+            else:
+                results["reporte_guardado"] = False
+                results["reporte_error"] = result.stderr
+                
+        except Exception as e:
+            results["reporte_guardado"] = False
+            results["reporte_error"] = str(e)
     
     return JSONResponse(content=results)
 
@@ -378,3 +429,144 @@ def logout():
     ya que el token se maneja en el cliente, pero es útil para logging
     """
     return {"message": "Sesión cerrada exitosamente"}
+
+@app.get("/reportes/{usuario_id}")
+def listar_reportes(usuario_id: int):
+    """
+    Listar todos los reportes de un usuario específico
+    """
+    try:
+        import subprocess
+        
+        # Consultar reportes del usuario ordenados por fecha descendente
+        query_sql = f"""
+        SELECT id, fecha_creacion, resultado_birads, nombre_paciente 
+        FROM reportes 
+        WHERE usuario_id = {usuario_id} 
+        ORDER BY fecha_creacion DESC;
+        """
+        
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-t", "-c", query_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
+        
+        # Parsear resultados
+        reportes = []
+        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
+        
+        for line in lines:
+            parts = line.split('|')
+            if len(parts) >= 4:
+                reportes.append({
+                    "id": int(parts[0].strip()),
+                    "fecha_creacion": parts[1].strip(),
+                    "resultado_birads": parts[2].strip(),
+                    "nombre_paciente": parts[3].strip()
+                })
+        
+        return {"reportes": reportes, "total": len(reportes)}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error listando reportes: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/reportes/detalle/{reporte_id}")
+def obtener_detalle_reporte(reporte_id: int):
+    """
+    Obtener el detalle completo de un reporte específico
+    """
+    try:
+        import subprocess
+        
+        # Consultar el reporte específico con todos los detalles
+        query_sql = f"""
+        SELECT id, usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente 
+        FROM reportes 
+        WHERE id = {reporte_id};
+        """
+        
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-t", "-c", query_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
+        
+        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
+        
+        if not lines:
+            raise HTTPException(status_code=404, detail="Reporte no encontrado")
+        
+        # Parsear resultado
+        parts = lines[0].split('|')
+        if len(parts) < 6:
+            raise HTTPException(status_code=500, detail="Datos de reporte incompletos")
+        
+        # Parsear JSON de detalles
+        try:
+            detalles = json.loads(parts[4].strip())
+        except json.JSONDecodeError:
+            detalles = {}
+        
+        reporte = {
+            "id": int(parts[0].strip()),
+            "usuario_id": int(parts[1].strip()),
+            "fecha_creacion": parts[2].strip(),
+            "resultado_birads": parts[3].strip(),
+            "detalles": detalles,
+            "nombre_paciente": parts[5].strip()
+        }
+        
+        return reporte
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error obteniendo detalle reporte: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/reportes/download/{reporte_id}")
+def descargar_reporte(reporte_id: int):
+    """
+    Descargar un reporte en formato JSON
+    """
+    try:
+        # Obtener el reporte completo
+        reporte = obtener_detalle_reporte(reporte_id)
+        
+        # Generar nombre de archivo
+        fecha = reporte["fecha_creacion"].split(' ')[0].replace('-', '')
+        nombre_archivo = f"reporte_birads_{reporte_id}_{fecha}.json"
+        
+        # Preparar contenido del reporte
+        reporte_descarga = {
+            "id": reporte["id"],
+            "fecha_creacion": reporte["fecha_creacion"],
+            "paciente": reporte["nombre_paciente"],
+            "resultado_birads": reporte["resultado_birads"],
+            "analisis_por_vista": reporte["detalles"],
+            "resumen": {
+                "total_vistas_analizadas": len(reporte["detalles"]),
+                "clasificacion_principal": reporte["resultado_birads"]
+            }
+        }
+        
+        # Retornar como JSON descargable
+        response = JSONResponse(content=reporte_descarga)
+        response.headers["Content-Disposition"] = f"attachment; filename={nombre_archivo}"
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error descargando reporte: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
