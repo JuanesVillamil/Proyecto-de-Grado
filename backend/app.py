@@ -33,16 +33,20 @@ from passlib.hash import bcrypt
 from pydantic import BaseModel
 import datetime
 from database import Base, engine, SessionLocal
-# from predict_resnet_multiview import predict_birads_per_view
-from database import Base, engine, SessionLocal
-
-
+# from predict_resnet_multiview import predict_birads_per_view  # Deshabilitado por conflicto PyTorch
 from PIL import Image
-# from predict_resnet_multiview import predict_birads_per_view
 
 app = FastAPI()
 
-# Base.metadata.create_all(bind=engine)  # Comentado temporalmente por problemas de codificación
+# Crear tablas automáticamente cuando inicia la aplicación
+# NOTA: Las tablas se crean automáticamente por Docker usando init_db.sql
+# try:
+#     Base.metadata.create_all(bind=engine)
+#     print("✅ Tablas de base de datos creadas/verificadas exitosamente")
+# except Exception as e:
+#     print(f"⚠️ Advertencia creando tablas: {e}")
+print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
+
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
@@ -223,16 +227,31 @@ async def predict(
     if not image_paths:
         return JSONResponse(content={"error": "No se recibió ninguna imagen válida."}, status_code=400)
 
-    # results = predict_birads_per_view(image_paths)
-    # Respuesta temporal sin predicción ML
+    # Generar resultados simulados mientras se soluciona el modelo ML
     results = {}
+    import random
+    
     for view, path in image_paths.items():
         filename = os.path.basename(path)
+        
+        # Simular clasificación BI-RADS (temporal)
+        birads_simulado = random.randint(1, 5)
+        confidence_simulado = round(random.uniform(75.0, 95.0), 2)
+        
+        # Generar probabilidades simuladas
+        probs = [random.uniform(0, 30) for _ in range(5)]
+        probs[birads_simulado - 1] = confidence_simulado  # Mayor probabilidad para la clase predicha
+        total = sum(probs)
+        probabilidades = [round(p / total * 100, 2) for p in probs]
+        
         results[view] = {
-            "birads": "Predicción temporalmente deshabilitada",
-            "image_url": f"http://127.0.0.1:8000/images/{filename}"
+            "birads": birads_simulado,
+            "confidence": confidence_simulado,
+            "probabilidades": probabilidades,
+            "image_url": f"http://127.0.0.1:8000/images/{filename}",
+            "note": "Resultado simulado - Modelo ML temporalmente deshabilitado"
         }
-
+    
     return JSONResponse(content=results)
 
 class UsuarioCreate(BaseModel):
