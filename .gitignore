@@ -34,3 +34,4 @@ out/
 
 # --- Test coverage ---
 coverage/
+/backend/temp_views

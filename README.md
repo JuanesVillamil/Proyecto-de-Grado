@@ -103,10 +103,14 @@ cd Proyecto-de-Grado
 # 2. Configurar variables de entorno
 cp backend/.env.example backend/.env.docker
 
-# 3. Levantar servicios con Docker
+# 3. Crear la imagen del Backend
+cd backend
+docker build -t birads_backend .
+
+# 4. Levantar servicios con Docker
 docker-compose up -d
 
-# 4. Verificar que los servicios estén ejecutándose
+# 5. Verificar que los servicios estén ejecutándose
 docker-compose ps
 ```
 

@@ -5,6 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from sqlalchemy.orm import Session
 import config  # Importar configuración antes de database
+import logging
+logger = logging.getLogger("uvicorn")
+logger.info(f"Loaded DATABASE_URL: {config.DATABASE_URL}")
 from database import Base, engine, SessionLocal
 from starlette.responses import Response
 from fastapi import FastAPI, HTTPException
@@ -52,7 +55,7 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200", "http://0.0.0.0:4200"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
