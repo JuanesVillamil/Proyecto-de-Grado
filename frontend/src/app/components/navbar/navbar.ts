@@ -38,4 +38,8 @@ export class Navbar {
     this.router.navigate(['/info']);
   }
 
+  irAReportes() {
+    this.router.navigate(['/reportes']);
+  }
+
 }
