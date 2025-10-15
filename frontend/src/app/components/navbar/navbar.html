@@ -12,10 +12,12 @@
       </a>
     </div>
     <div class="navbar-content" style="display: flex;">
-      <div style="margin-right: 40px;"><a>Lista de Reportes</a></div>
       <div style="margin-right: 40px;">
-  <a (click)="Informacion()">Información</a>
-</div>
+        <a (click)="irAReportes()" style="cursor: pointer;">Lista de Reportes</a>
+      </div>
+      <div style="margin-right: 40px;">
+        <a (click)="Informacion()">Información</a>
+      </div>
       <div><a (click)="cerrarSesion()" style="cursor: pointer;">Cerrar Sesión</a></div>
     </div>
   </div>

@@ -6,6 +6,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 import config  # Importar configuración antes de database
 from database import Base, engine, SessionLocal
+from models import Usuario, Reporte  # ← IMPORTAR LOS MODELOS
 from starlette.responses import Response
 from fastapi import FastAPI, HTTPException
 from auth import create_access_token
@@ -49,13 +50,14 @@ except Exception as e:
     print(f"⚠️ Advertencia creando tablas: {e}")
 print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 
-# Middleware CORS
+# Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_origins=["*"],  # ⚠️ Permite todos los orígenes - Solo desarrollo
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
@@ -270,16 +272,20 @@ async def predict(
     if usuario_id:
         try:
             import subprocess
+            from datetime import datetime, timezone
+            
+            # Obtener la fecha y hora exacta del análisis
+            fecha_actual = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             
             # Preparar los datos para insertar
             detalles_json = json.dumps(results, ensure_ascii=False)
             detalles_escaped = detalles_json.replace("'", "''")
             nombre_paciente_escaped = (nombre_paciente or "Sin especificar").replace("'", "''")
             
-            # Insertar reporte usando subprocess
+            # Insertar reporte usando subprocess con fecha explícita
             insert_sql = f"""
-            INSERT INTO reportes (usuario_id, resultado_birads, detalles_json, nombre_paciente) 
-            VALUES ({usuario_id}, 'BI-RADS {resultado_birads_principal}', '{detalles_escaped}', '{nombre_paciente_escaped}');
+            INSERT INTO reportes (usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente) 
+            VALUES ({usuario_id}, '{fecha_actual}', 'BI-RADS {resultado_birads_principal}', '{detalles_escaped}', '{nombre_paciente_escaped}');
             """
             
             result = subprocess.run([
@@ -293,7 +299,8 @@ async def predict(
                 results["reporte_info"] = {
                     "usuario_id": usuario_id,
                     "resultado_birads": f"BI-RADS {resultado_birads_principal}",
-                    "nombre_paciente": nombre_paciente or "Sin especificar"
+                    "nombre_paciente": nombre_paciente or "Sin especificar",
+                    "fecha_creacion": fecha_actual
                 }
             else:
                 results["reporte_guardado"] = False
@@ -385,7 +392,7 @@ def login(datos: dict):
         # Buscar usuario en la base de datos usando subprocess
         import subprocess
         
-        query_sql = f"SELECT documento, nombre, password_hash FROM usuarios WHERE documento = '{documento}';"
+        query_sql = f"SELECT id, documento, nombre, password_hash FROM usuarios WHERE documento = '{documento}';"
         result = subprocess.run([
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
@@ -401,12 +408,13 @@ def login(datos: dict):
         
         # Parsear resultado
         user_data = lines[0].strip().split('|')
-        if len(user_data) < 3:
+        if len(user_data) < 4:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
-        stored_documento = user_data[0].strip()
-        stored_nombre = user_data[1].strip()
-        stored_password_hash = user_data[2].strip()
+        stored_id = user_data[0].strip()
+        stored_documento = user_data[1].strip()
+        stored_nombre = user_data[2].strip()
+        stored_password_hash = user_data[3].strip()
         
         # Verificar contraseña
         if not bcrypt.verify(password, stored_password_hash):
@@ -414,7 +422,15 @@ def login(datos: dict):
         
         # Crear token
         access_token = create_access_token(data={"sub": stored_documento})
-        return {"access_token": access_token, "token_type": "bearer", "user": {"documento": stored_documento, "nombre": stored_nombre}}
+        return {
+            "access_token": access_token, 
+            "token_type": "bearer", 
+            "user": {
+                "id": int(stored_id),
+                "documento": stored_documento, 
+                "nombre": stored_nombre
+            }
+        }
         
     except HTTPException:
         raise
