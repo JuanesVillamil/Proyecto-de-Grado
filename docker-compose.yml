@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
@@ -15,7 +15,6 @@ services:
 
   backend:
     build: ./backend
-    image: birads_backend
     container_name: birads_backend
     ports:
       - "8000:8000"
@@ -25,7 +24,6 @@ services:
       - ./backend/.env.docker
     volumes:
       - ./backend:/app
-      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
 volumes:

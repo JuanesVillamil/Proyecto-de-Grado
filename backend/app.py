@@ -5,9 +5,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from sqlalchemy.orm import Session
 import config  # Importar configuración antes de database
-import logging
-logger = logging.getLogger("uvicorn")
-logger.info(f"Loaded DATABASE_URL: {config.DATABASE_URL}")
 from database import Base, engine, SessionLocal
 from models import Usuario, Reporte  # ← IMPORTAR LOS MODELOS
 from starlette.responses import Response
@@ -56,7 +53,7 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 # Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_origins=["*"],  # ⚠️ Permite todos los orígenes - Solo desarrollo
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -317,26 +314,41 @@ async def predict(
 
 class UsuarioCreate(BaseModel):
     nombre: str
-    documento: str
+    usuario: str
     fecha_nacimiento: datetime.date
     rol: str
     password: str
+    observaciones: str = ""  # Campo opcional con valor por defecto
 
 @app.post("/register")
 def registrar_usuario(usuario: UsuarioCreate):
     try:
+        # Validar que el rol sea uno de los permitidos
+        roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
+        if usuario.rol not in roles_permitidos:
+            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
+        
+        # Normalizar el rol
+        if usuario.rol.lower() == "administrador":
+            rol_normalizado = "Administrador"
+        elif usuario.rol.lower() == "radiologo":
+            rol_normalizado = "Radiólogo"
+        else:
+            rol_normalizado = usuario.rol
+        
         # Usar subprocess para evitar problemas de codificación con psycopg2
         import subprocess
         
         # Escapar comillas en los datos
-        documento = usuario.documento.replace("'", "''")
+        usuario_name = usuario.usuario.replace("'", "''")
         nombre = usuario.nombre.replace("'", "''")
         fecha = usuario.fecha_nacimiento.strftime('%Y-%m-%d')
-        rol = usuario.rol.replace("'", "''")
+        rol = rol_normalizado.replace("'", "''")
+        observaciones = usuario.observaciones.replace("'", "''") if usuario.observaciones else ""
         password_hash = bcrypt.hash(usuario.password)
         
         # Verificar si ya existe
-        check_sql = f"SELECT COUNT(*) FROM usuarios WHERE documento = '{documento}';"
+        check_sql = f"SELECT COUNT(*) FROM usuarios WHERE usuario = '{usuario_name}';"
         result = subprocess.run([
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
@@ -344,10 +356,10 @@ def registrar_usuario(usuario: UsuarioCreate):
         ], capture_output=True, text=True)
         
         if result.returncode == 0 and int(result.stdout.strip()) > 0:
-            raise HTTPException(status_code=400, detail="El documento ya está registrado")
+            raise HTTPException(status_code=400, detail="El usuario ya está registrado")
         
-        # Insertar nuevo usuario
-        insert_sql = f"INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, password_hash) VALUES ('{documento}', '{nombre}', '{fecha}', '{rol}', '{password_hash}');"
+        # Insertar nuevo usuario (incluyendo observaciones del modelo)
+        insert_sql = f"INSERT INTO usuarios (usuario, nombre, fecha_nacimiento, rol, observaciones, password_hash) VALUES ('{usuario_name}', '{nombre}', '{fecha}', '{rol}', '{observaciones}', '{password_hash}');"
         result = subprocess.run([
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
@@ -386,16 +398,16 @@ def usuario_protegido(user: dict = Depends(get_current_user)):
 @app.post("/login")
 def login(datos: dict):
     try:
-        documento = datos.get("documento", "").replace("'", "''")
+        usuario = datos.get("usuario", "").replace("'", "''")
         password = datos.get("password", "")
         
-        if not documento or not password:
-            raise HTTPException(status_code=400, detail="Documento y contraseña son requeridos")
+        if not usuario or not password:
+            raise HTTPException(status_code=400, detail="Usuario y contraseña son requeridos")
         
         # Buscar usuario en la base de datos usando subprocess
         import subprocess
         
-        query_sql = f"SELECT id, documento, nombre, password_hash FROM usuarios WHERE documento = '{documento}';"
+        query_sql = f"SELECT id, usuario, nombre, password_hash FROM usuarios WHERE usuario = '{usuario}';"
         result = subprocess.run([
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
@@ -415,7 +427,7 @@ def login(datos: dict):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
         stored_id = user_data[0].strip()
-        stored_documento = user_data[1].strip()
+        stored_usuario = user_data[1].strip()
         stored_nombre = user_data[2].strip()
         stored_password_hash = user_data[3].strip()
         
@@ -424,13 +436,13 @@ def login(datos: dict):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
         
         # Crear token
-        access_token = create_access_token(data={"sub": stored_documento})
+        access_token = create_access_token(data={"sub": stored_usuario})
         return {
             "access_token": access_token, 
             "token_type": "bearer", 
             "user": {
                 "id": int(stored_id),
-                "documento": stored_documento, 
+                "usuario": stored_usuario, 
                 "nombre": stored_nombre
             }
         }
@@ -588,4 +600,108 @@ def descargar_reporte(reporte_id: int):
         raise
     except Exception as e:
         print(f"Error descargando reporte: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+# Endpoints para gestión de perfil de usuario
+@app.get("/usuario/{usuario_id}")
+def obtener_usuario(usuario_id: int):
+    """Obtener datos completos de un usuario por ID"""
+    try:
+        import subprocess
+        
+        # Consultar usuario usando subprocess
+        select_sql = f"""
+        SELECT id, usuario, nombre, fecha_nacimiento, rol, observaciones 
+        FROM usuarios WHERE id = {usuario_id};
+        """
+        
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-t", "-A", "-F", "|", "-c", select_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0 and result.stdout.strip():
+            lines = result.stdout.strip().split('\n')
+            if lines and lines[0].strip():
+                data = lines[0].split('|')
+                if len(data) >= 6:
+                    usuario_data = {
+                        "id": int(data[0]),
+                        "usuario": data[1],
+                        "nombre": data[2],
+                        "fecha_nacimiento": data[3],
+                        "rol": data[4],
+                        "observaciones": data[5] if data[5] else ""
+                    }
+                    return usuario_data
+        
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    except subprocess.CalledProcessError:
+        raise HTTPException(status_code=500, detail="Error de base de datos")
+    except Exception as e:
+        print(f"Error obteniendo usuario: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.put("/usuario/{usuario_id}")
+def actualizar_usuario(usuario_id: int, usuario_data: dict):
+    """Actualizar datos de un usuario"""
+    try:
+        import subprocess
+        
+        # Preparar datos para actualizar
+        usuario_name = usuario_data.get('usuario', '').replace("'", "''")
+        nombre = usuario_data.get('nombre', '').replace("'", "''")
+        fecha_nacimiento = usuario_data.get('fecha_nacimiento', '')
+        rol_input = usuario_data.get('rol', 'Radiólogo')
+        observaciones = usuario_data.get('observaciones', '').replace("'", "''")
+        
+        # Validar que el rol sea uno de los permitidos
+        roles_permitidos = ["Administrador", "Radiólogo"]
+        if rol_input not in roles_permitidos:
+            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
+        
+        rol = rol_input.replace("'", "''")
+        
+        # Validaciones básicas
+        if not usuario_name or not nombre or not fecha_nacimiento:
+            raise HTTPException(status_code=400, detail="Usuario, nombre y fecha de nacimiento son obligatorios")
+        
+        # Actualizar usuario usando subprocess
+        update_sql = f"""
+        UPDATE usuarios 
+        SET usuario = '{usuario_name}',
+            nombre = '{nombre}',
+            fecha_nacimiento = '{fecha_nacimiento}',
+            rol = '{rol}',
+            observaciones = '{observaciones}'
+        WHERE id = {usuario_id};
+        """
+        
+        result = subprocess.run([
+            "docker", "exec", "-i", "birads_postgres", 
+            "psql", "-U", "postgres", "-d", "birads_db", 
+            "-c", update_sql
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return {
+                "message": "Usuario actualizado correctamente",
+                "usuario": {
+                    "id": usuario_id,
+                    "usuario": usuario_name,
+                    "nombre": nombre,
+                    "fecha_nacimiento": fecha_nacimiento,
+                    "rol": rol,
+                    "observaciones": observaciones
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Error actualizando usuario")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error actualizando usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")

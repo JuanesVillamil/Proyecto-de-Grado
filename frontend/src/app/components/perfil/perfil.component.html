@@ -1,0 +1,143 @@
+<div class="perfil-container">
+  <!-- Header -->
+  <div class="header">
+    <button class="btn-volver" (click)="volver()">
+      ← Volver
+    </button>
+    <h1>Mi Cuenta</h1>
+    <div class="acciones-header">
+      <button 
+        *ngIf="!editMode" 
+        class="btn-editar" 
+        (click)="activarEdicion()">
+        ✏️ Editar Datos
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando datos...</p>
+  </div>
+
+  <!-- Mensaje -->
+  <div 
+    *ngIf="mensaje" 
+    class="mensaje"
+    [class.mensaje-success]="tipoMensaje === 'success'"
+    [class.mensaje-error]="tipoMensaje === 'error'">
+    {{ mensaje }}
+  </div>
+
+  <!-- Formulario de datos -->
+  <div *ngIf="!loading" class="datos-container">
+    <form class="formulario-datos">
+      
+      <!-- Documento -->
+      <div class="campo-grupo">
+        <label for="documento">Documento de Identidad</label>
+        <input 
+          type="text" 
+          id="documento"
+          name="documento"
+          [(ngModel)]="usuario.documento"
+          [readonly]="!editMode"
+          class="campo-input"
+          [class.campo-readonly]="!editMode"
+          placeholder="Ingrese su documento">
+      </div>
+
+      <!-- Nombre -->
+      <div class="campo-grupo">
+        <label for="nombre">Nombre Completo</label>
+        <input 
+          type="text" 
+          id="nombre"
+          name="nombre"
+          [(ngModel)]="usuario.nombre"
+          [readonly]="!editMode"
+          class="campo-input"
+          [class.campo-readonly]="!editMode"
+          placeholder="Ingrese su nombre completo">
+      </div>
+
+      <!-- Fecha de Nacimiento -->
+      <div class="campo-grupo">
+        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+        <input 
+          type="date" 
+          id="fecha_nacimiento"
+          name="fecha_nacimiento"
+          [(ngModel)]="usuario.fecha_nacimiento"
+          [readonly]="!editMode"
+          class="campo-input"
+          [class.campo-readonly]="!editMode">
+      </div>
+
+      <!-- Rol -->
+      <div class="campo-grupo">
+        <label for="rol">Rol</label>
+        <select 
+          id="rol"
+          name="rol"
+          [(ngModel)]="usuario.rol"
+          [disabled]="!editMode"
+          class="campo-input campo-select"
+          [class.campo-readonly]="!editMode">
+          <option value="Administrador">Administrador</option>
+          <option value="Radiólogo">Radiólogo</option>
+        </select>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="campo-grupo">
+        <label for="observaciones">Observaciones</label>
+        <textarea 
+          id="observaciones"
+          name="observaciones"
+          [(ngModel)]="usuario.observaciones"
+          [readonly]="!editMode"
+          class="campo-input campo-textarea"
+          [class.campo-readonly]="!editMode"
+          rows="3"
+          placeholder="Observaciones adicionales (opcional)"></textarea>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="botones-accion" *ngIf="editMode">
+        <button 
+          type="button" 
+          class="btn-cancelar" 
+          (click)="cancelarEdicion()">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn-guardar" 
+          (click)="guardarCambios()"
+          [disabled]="loading">
+          <span *ngIf="!loading">💾 Guardar Cambios</span>
+          <span *ngIf="loading">Guardando...</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Información adicional -->
+    <div class="info-adicional" *ngIf="!editMode">
+      <div class="info-card">
+        <h3>Información de la Cuenta</h3>
+        <p><strong>ID de Usuario:</strong> {{ usuario.id }}</p>
+        <p><strong>Última actualización:</strong> Hoy</p>
+        
+        <div class="acciones-cuenta">
+          <button class="btn-cambiar-password" (click)="cambiarPassword()">
+            🔑 Cambiar Contraseña
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

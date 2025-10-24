@@ -42,4 +42,8 @@ export class Navbar {
     this.router.navigate(['/reportes']);
   }
 
+  irAPerfil() {
+    this.router.navigate(['/perfil']);
+  }
+
 }

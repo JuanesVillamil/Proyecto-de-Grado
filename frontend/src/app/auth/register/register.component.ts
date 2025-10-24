@@ -15,7 +15,7 @@ export class RegisterComponent {
   documento = '';
   fechaNacimiento = '';
   password = '';
-  rol = '';
+  rol = 'radiologo'; // Valor predeterminado
 
   constructor(private http: HttpClient, private router: Router) {}
 

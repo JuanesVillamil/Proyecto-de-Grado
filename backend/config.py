@@ -23,7 +23,6 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL", 
     "postgresql://postgres:postgres@localhost:5432/birads_db"
 )
-print(f"Connecting to: {DATABASE_URL}") 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_muy_segura_para_jwt")
 ALGORITHM = "HS256"
