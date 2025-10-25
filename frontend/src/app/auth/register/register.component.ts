@@ -12,10 +12,10 @@ import { Router } from '@angular/router';
 })
 export class RegisterComponent {
   nombre = '';
-  documento = '';
+  usuario = '';  // Cambiado de 'documento' a 'usuario'
   fechaNacimiento = '';
   password = '';
-  rol = 'radiologo'; // Valor predeterminado
+  rol = 'Radiólogo'; // Valor predeterminado con mayúscula
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -27,10 +27,11 @@ export class RegisterComponent {
 
     const datos = {
       nombre: this.nombre,
-      documento: this.documento,
+      usuario: this.usuario,  // Cambiado de 'documento' a 'usuario'
       fecha_nacimiento: this.fechaNacimiento,
       rol: this.rol,
-      password: this.password
+      password: this.password,
+      observaciones: ""  // Agregar campo observaciones
     };
 
     this.http.post('http://localhost:8000/register', datos)
@@ -40,7 +41,9 @@ export class RegisterComponent {
           // Limpia el formulario si quieres
         },
         error: (err) => {
-          alert('Error al registrar: ' + (err.error?.detail || 'Error desconocido'));
+          console.error('Error completo:', err);  // Para debug
+          const errorMessage = err.error?.detail || err.message || 'Error desconocido';
+          alert('Error al registrar: ' + errorMessage);
         }
       });
   }

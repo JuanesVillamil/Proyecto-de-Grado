@@ -21,7 +21,7 @@ export class LoginComponent {
 
   submit() {
     const datos = {
-      documento: this.username,
+      usuario: this.username,  // Cambiado de 'documento' a 'usuario'
       password: this.password
     };
 

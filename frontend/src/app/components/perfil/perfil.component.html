@@ -34,18 +34,18 @@
   <div *ngIf="!loading" class="datos-container">
     <form class="formulario-datos">
       
-      <!-- Documento -->
+      <!-- Usuario -->
       <div class="campo-grupo">
-        <label for="documento">Documento de Identidad</label>
+        <label for="usuario">Usuario</label>
         <input 
           type="text" 
-          id="documento"
-          name="documento"
-          [(ngModel)]="usuario.documento"
+          id="usuario"
+          name="usuario"
+          [(ngModel)]="usuario.usuario"
           [readonly]="!editMode"
           class="campo-input"
           [class.campo-readonly]="!editMode"
-          placeholder="Ingrese su documento">
+          placeholder="Ingrese su usuario">
       </div>
 
       <!-- Nombre -->

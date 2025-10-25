@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 interface Usuario {
   id: number;
-  documento: string;
+  usuario: string;  // Cambiado de 'documento' a 'usuario'
   nombre: string;
   fecha_nacimiento: string;
   rol: string;
@@ -23,7 +23,7 @@ interface Usuario {
 export class PerfilComponent implements OnInit {
   usuario: Usuario = {
     id: 0,
-    documento: '',
+    usuario: '',  // Cambiado de 'documento' a 'usuario'
     nombre: '',
     fecha_nacimiento: '',
     rol: '',
@@ -64,7 +64,7 @@ export class PerfilComponent implements OnInit {
             // Si no se puede cargar desde servidor, usar datos del localStorage
             this.usuario = {
               id: userFromStorage.id,
-              documento: userFromStorage.documento,
+              usuario: userFromStorage.usuario || userFromStorage.documento || '',  // Compatibilidad con ambos campos
               nombre: userFromStorage.nombre,
               fecha_nacimiento: userFromStorage.fecha_nacimiento || '',
               rol: userFromStorage.rol || 'Radiólogo',
@@ -121,8 +121,8 @@ export class PerfilComponent implements OnInit {
       return false;
     }
     
-    if (!this.usuario.documento.trim()) {
-      this.mostrarMensaje('El documento es obligatorio', 'error');
+    if (!this.usuario.usuario.trim()) {
+      this.mostrarMensaje('El usuario es obligatorio', 'error');
       return false;
     }
     

@@ -353,7 +353,7 @@ def registrar_usuario(usuario: UsuarioCreate):
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
             "-t", "-c", check_sql
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, encoding='utf-8')
         
         if result.returncode == 0 and int(result.stdout.strip()) > 0:
             raise HTTPException(status_code=400, detail="El usuario ya está registrado")
@@ -364,7 +364,7 @@ def registrar_usuario(usuario: UsuarioCreate):
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
             "-c", insert_sql
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, encoding='utf-8')
         
         if result.returncode == 0:
             return {"message": "Usuario registrado exitosamente"}
@@ -412,7 +412,7 @@ def login(datos: dict):
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
             "-t", "-c", query_sql
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, encoding='utf-8')
         
         if result.returncode != 0:
             raise HTTPException(status_code=500, detail="Error de conexión a la base de datos")
@@ -683,7 +683,7 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
             "docker", "exec", "-i", "birads_postgres", 
             "psql", "-U", "postgres", "-d", "birads_db", 
             "-c", update_sql
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, encoding='utf-8')
         
         if result.returncode == 0:
             return {
