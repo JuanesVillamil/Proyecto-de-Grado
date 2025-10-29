@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { API_BASE_URL } from '../../config/api.config';
 
 @Component({
   selector: 'app-register',
@@ -34,7 +35,7 @@ export class RegisterComponent {
       observaciones: ""  // Agregar campo observaciones
     };
 
-    this.http.post('http://localhost:8000/register', datos)
+    this.http.post(`${API_BASE_URL}/register`, datos)
       .subscribe({
         next: () => {
           alert('¡Registro exitoso!');

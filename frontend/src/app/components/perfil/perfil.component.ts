@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { API_BASE_URL } from '../../config/api.config';
 
 interface Usuario {
   id: number;
@@ -52,7 +53,7 @@ export class PerfilComponent implements OnInit {
       
       // Cargar datos completos desde el servidor
       this.loading = true;
-      this.http.get<Usuario>(`http://localhost:8000/usuario/${userFromStorage.id}`)
+      this.http.get<Usuario>(`${API_BASE_URL}/usuario/${userFromStorage.id}`)
         .subscribe({
           next: (usuario) => {
             this.usuario = usuario;
@@ -96,7 +97,7 @@ export class PerfilComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.put(`http://localhost:8000/usuario/${this.usuario.id}`, this.usuario)
+    this.http.put(`${API_BASE_URL}/usuario/${this.usuario.id}`, this.usuario)
       .subscribe({
         next: (response: any) => {
           this.usuarioOriginal = { ...this.usuario };

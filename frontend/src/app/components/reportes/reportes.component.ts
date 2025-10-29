@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { API_BASE_URL } from '../../config/api.config';
 
 interface Reporte {
   id: number;
@@ -69,7 +70,7 @@ export class ReportesComponent implements OnInit {
     console.log(`Cargando reportes para usuario ID: ${this.usuario.id}`); // Debug
     this.loading = true;
     
-    this.http.get<Reporte[]>(`http://localhost:8000/reportes/${this.usuario.id}`)
+    this.http.get<Reporte[]>(`${API_BASE_URL}/reportes/${this.usuario.id}`)
       .subscribe({
         next: (reportes) => {
           console.log('Reportes recibidos:', reportes); // Debug
@@ -84,7 +85,7 @@ export class ReportesComponent implements OnInit {
   }
 
   descargarReporte(reporteId: number) {
-    const url = `http://localhost:8000/reportes/${reporteId}/download`;
+    const url = `${API_BASE_URL}/reportes/${reporteId}/download`;
     window.open(url, '_blank');
   }
 

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { API_BASE_URL } from '../../config/api.config';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +26,7 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.http.post<any>('http://localhost:8000/login', datos).subscribe({
+    this.http.post<any>(`${API_BASE_URL}/login`, datos).subscribe({
       next: (resp) => {
         if (resp.access_token) {
           // Guardar token y datos del usuario
@@ -51,7 +52,7 @@ export class LoginComponent {
       password: this.registerPassword
     };
 
-    this.http.post<any>('http://localhost:8000/register', datos).subscribe({
+    this.http.post<any>(`${API_BASE_URL}/register`, datos).subscribe({
       next: () => {
         alert('Registro exitoso');
         this.showLogin();
