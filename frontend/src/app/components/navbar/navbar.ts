@@ -21,6 +21,7 @@ export class Navbar {
   cerrarSesion() {
     // Mostrar confirmación antes de cerrar sesión
     const confirmar = confirm('¿Estás seguro de que quieres cerrar sesión?');
+    this.router.navigate(['/']);
     
     if (confirmar) {
       // Limpiar el token y datos del usuario del localStorage
