@@ -1,5 +1,6 @@
 # --- NODE / ANGULAR ---
 node_modules/
+dist/
 tmp/
 temp/
 .cache/
