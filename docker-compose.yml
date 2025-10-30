@@ -7,11 +7,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     restart: unless-stopped
+    networks:
+      - birads_network
 
   backend:
     build: ./backend
@@ -25,6 +27,12 @@ services:
     volumes:
       - ./backend:/app
     restart: unless-stopped
+    networks:
+      - birads_network
 
 volumes:
   postgres_data:
+
+networks:
+  birads_network:
+    driver: bridge
