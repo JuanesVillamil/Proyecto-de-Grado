@@ -37,7 +37,7 @@ export class RegisterComponent {
       observaciones: ""  // Agregar campo observaciones
     };
 
-    this.http.post(this.apiUrl, datos)
+    this.http.post(`${this.apiUrl}/register`, datos)
       .subscribe({
         next: () => {
           alert('¡Registro exitoso!');
