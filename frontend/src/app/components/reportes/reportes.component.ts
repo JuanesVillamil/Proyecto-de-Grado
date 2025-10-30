@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
+import { enviroment } from '../../../../enviroment'
 
 interface Reporte {
   id: number;
@@ -32,6 +33,8 @@ export class ReportesComponent implements OnInit {
     private router: Router,
     private location: Location
   ) {}
+
+  private apiUrl = `${enviroment.apiUrl}`;
 
   ngOnInit() {
     this.cargarUsuario();
@@ -72,7 +75,7 @@ export class ReportesComponent implements OnInit {
     console.log(`Cargando reportes para usuario ID: ${this.usuario.id}`); // Debug
     this.loading = true;
     
-    this.http.get<Reporte[]>(`http://localhost:8000/reportes/${this.usuario.id}`)
+    this.http.get<Reporte[]>(`${this.apiUrl}/reportes/${this.usuario.id}`)
       .subscribe({
         next: (reportes) => {
           console.log('Reportes recibidos:', reportes); // Debug
@@ -87,7 +90,7 @@ export class ReportesComponent implements OnInit {
   }
 
   descargarReporte(reporteId: number) {
-    const url = `http://localhost:8000/reportes/${reporteId}/download`;
+    const url = `${this.apiUrl}:8000/reportes/${reporteId}/download`;
     window.open(url, '_blank');
   }
 
