@@ -56,7 +56,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://35.223.139.97:4200"],
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
