@@ -16,6 +16,6 @@ export class BiradsService {
   }> {
     return this.http.post<{
       [view: string]: { birads: number; confidence: number }
-    }>(this.apiUrl, formData);
+    }>(`${this.apiUrl}/predict`, formData); 
   }
 }
