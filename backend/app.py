@@ -34,7 +34,7 @@ from database import Base, engine, SessionLocal
 from PIL import Image
 
 app = FastAPI()
-apiUrl = 'http://35.223.139.97:8000/api'
+apiUrl = 'http://35.223.139.97:8000'
 
 # Crear tablas automáticamente cuando inicia la aplicación
 # NOTA: Las tablas se crean automáticamente por Docker Y por SQLAlchemy
