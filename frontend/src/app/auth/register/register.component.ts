@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { enviroment } from '../../../../enviroment'
 
 @Component({
   selector: 'app-register',
@@ -19,6 +20,8 @@ export class RegisterComponent {
 
   constructor(private http: HttpClient, private router: Router) {}
 
+  private apiUrl = `${enviroment.apiUrl}`;
+
   submit() {
     if (!this.rol) {
       alert('Por favor seleccione un rol antes de continuar.');
@@ -34,7 +37,7 @@ export class RegisterComponent {
       observaciones: ""  // Agregar campo observaciones
     };
 
-    this.http.post('http://localhost:8000/register', datos)
+    this.http.post(this.apiUrl, datos)
       .subscribe({
         next: () => {
           alert('¡Registro exitoso!');

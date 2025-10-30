@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { enviroment } from '../../../enviroment'
 
 @Injectable({
   providedIn: 'root'
 })
 export class BiradsService {
-  private apiUrl = 'http://127.0.0.1:8000/predict';
+  private apiUrl = `${enviroment.apiUrl}`;
 
   constructor(private http: HttpClient) {}
 
