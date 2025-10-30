@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { API_BASE_URL } from '../../config/api.config';
+import { Location } from '@angular/common';
+import { Navbar } from '../navbar/navbar';
 
 interface Reporte {
   id: number;
@@ -16,7 +18,7 @@ interface Reporte {
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Navbar],
   templateUrl: './reportes.component.html',
   styleUrls: ['./reportes.component.scss']
 })
@@ -28,12 +30,13 @@ export class ReportesComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {}
 
   ngOnInit() {
     this.cargarUsuario();
-    // cargarReportes() se llama desde cargarUsuario() después de validar el usuario
+    this.cargarReportes();
   }
 
   cargarUsuario() {
@@ -111,7 +114,7 @@ export class ReportesComponent implements OnInit {
   }
 
   volver() {
-    this.router.navigate(['/home']);
+    this.location.back();
   }
 
   mostrarDetalles(reporte: Reporte) {
