@@ -34,6 +34,7 @@ from database import Base, engine, SessionLocal
 from PIL import Image
 
 app = FastAPI()
+apiUrl = 'http://35.223.139.97:8000/api'
 
 # Crear tablas automáticamente cuando inicia la aplicación
 # NOTA: Las tablas se crean automáticamente por Docker Y por SQLAlchemy
@@ -251,7 +252,7 @@ async def predict(
             "birads": birads_simulado,
             "confidence": confidence_simulado,
             "probabilidades": probabilidades,
-            "image_url": f"http://127.0.0.1:8000/images/{filename}",
+            "image_url": f"{apiUrl}/images/{filename}",
             "note": "Resultado simulado - Modelo ML temporalmente deshabilitado"
         }
     
