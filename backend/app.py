@@ -14,6 +14,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from auth import verify_token
 from passlib.hash import bcrypt
+import psycopg2
 import json
 import datetime
 class CORSAwareStaticFiles(StaticFiles):
@@ -323,60 +324,51 @@ class UsuarioCreate(BaseModel):
 @app.post("/register")
 def registrar_usuario(usuario: UsuarioCreate):
     try:
-        # Validar que el rol sea uno de los permitidos
         roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
         if usuario.rol not in roles_permitidos:
             raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
-        
-        # Normalizar el rol
-        if usuario.rol.lower() == "administrador":
-            rol_normalizado = "Administrador"
-        elif usuario.rol.lower() == "radiologo":
-            rol_normalizado = "Radiólogo"
-        else:
-            rol_normalizado = usuario.rol
-        
-        # Usar subprocess para evitar problemas de codificación con psycopg2
-        import subprocess
-        
-        # Escapar comillas en los datos
-        usuario_name = usuario.usuario.replace("'", "''")
-        nombre = usuario.nombre.replace("'", "''")
-        fecha = usuario.fecha_nacimiento.strftime('%Y-%m-%d')
-        rol = rol_normalizado.replace("'", "''")
-        observaciones = usuario.observaciones.replace("'", "''") if usuario.observaciones else ""
+
+        rol_normalizado = "Administrador" if usuario.rol.lower() == "administrador" else "Radiólogo"
         password_hash = bcrypt.hash(usuario.password)
-        
+
+        # Connect to Postgres inside Docker network
+        conn = psycopg2.connect(
+            host="postgres",
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+
         # Verificar si ya existe
-        check_sql = f"SELECT COUNT(*) FROM usuarios WHERE usuario = '{usuario_name}';"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", check_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0 and int(result.stdout.strip()) > 0:
+        cur.execute("SELECT COUNT(*) FROM usuarios WHERE documento = %s;", (usuario.usuario,))
+        count = cur.fetchone()[0]
+        if count > 0:
             raise HTTPException(status_code=400, detail="El usuario ya está registrado")
-        
-        # Insertar nuevo usuario (incluyendo observaciones del modelo)
-        insert_sql = f"INSERT INTO usuarios (usuario, nombre, fecha_nacimiento, rol, observaciones, password_hash) VALUES ('{usuario_name}', '{nombre}', '{fecha}', '{rol}', '{observaciones}', '{password_hash}');"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-c", insert_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0:
-            return {"message": "Usuario registrado exitosamente"}
-        else:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
-                
+
+        # Insertar nuevo usuario
+        cur.execute("""
+            INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, observaciones, password_hash)
+            VALUES (%s, %s, %s, %s, %s, %s);
+        """, (
+            usuario.usuario,
+            usuario.nombre,
+            usuario.fecha_nacimiento.strftime('%Y-%m-%d'),
+            rol_normalizado,
+            usuario.observaciones or "",
+            password_hash
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": "Usuario registrado exitosamente"}
+
     except HTTPException:
-        # Re-lanzar HTTPExceptions específicas
         raise
     except Exception as e:
-        # Manejar otros errores
-        print(f"Error en registro: {str(e)}")  # Para debug
+        print(f"Error en registro: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -398,60 +390,59 @@ def usuario_protegido(user: dict = Depends(get_current_user)):
 @app.post("/login")
 def login(datos: dict):
     try:
-        usuario = datos.get("usuario", "").replace("'", "''")
-        password = datos.get("password", "")
-        
+        usuario = datos.get("usuario", "").strip()
+        password = datos.get("password", "").strip()
+
         if not usuario or not password:
             raise HTTPException(status_code=400, detail="Usuario y contraseña son requeridos")
-        
-        # Buscar usuario en la base de datos usando subprocess
-        import subprocess
-        
-        query_sql = f"SELECT id, usuario, nombre, password_hash FROM usuarios WHERE usuario = '{usuario}';"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail="Error de conexión a la base de datos")
-        
-        lines = result.stdout.strip().split('\n')
-        if not lines or lines[0].strip() == '':
+
+        # Conexión directa a la base de datos dentro del contenedor
+        conn = psycopg2.connect(
+            host="postgres",        # nombre del servicio del contenedor postgres
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+
+        # Buscar usuario
+        cur.execute("""
+            SELECT id, documento, nombre, password_hash 
+            FROM usuarios 
+            WHERE documento = %s;
+        """, (usuario,))
+
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not row:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        # Parsear resultado
-        user_data = lines[0].strip().split('|')
-        if len(user_data) < 4:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        stored_id = user_data[0].strip()
-        stored_usuario = user_data[1].strip()
-        stored_nombre = user_data[2].strip()
-        stored_password_hash = user_data[3].strip()
-        
+
+        stored_id, stored_usuario, stored_nombre, stored_password_hash = row
+
         # Verificar contraseña
         if not bcrypt.verify(password, stored_password_hash):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
+
         # Crear token
         access_token = create_access_token(data={"sub": stored_usuario})
+
         return {
-            "access_token": access_token, 
-            "token_type": "bearer", 
+            "access_token": access_token,
+            "token_type": "bearer",
             "user": {
-                "id": int(stored_id),
-                "usuario": stored_usuario, 
+                "id": stored_id,
+                "usuario": stored_usuario,
                 "nombre": stored_nombre
             }
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error en login: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error interno del servidor")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 @app.post("/logout")
 def logout():

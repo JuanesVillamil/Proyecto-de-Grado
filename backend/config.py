@@ -21,7 +21,7 @@ configure_environment()
 # Variables de configuración
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://postgres:postgres@localhost:5432/birads_db"
+    "postgresql://postgres:postgres@postgres:5432/birads_db"
 )
 
 SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_muy_segura_para_jwt")
