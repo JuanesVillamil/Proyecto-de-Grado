@@ -1,87 +1,91 @@
-<div class="reportes-container">
-  <!-- Header -->
-  <div class="header">
-    <button class="btn-volver" (click)="volver()">
-      ← Volver
-    </button>
-    <h1>Historial de Reportes</h1>
-    <div class="usuario-info" *ngIf="usuario">
-      <span>Usuario: {{ usuario.nombre }}</span>
-    </div>
-  </div>
+<header>
+  <app-navbar></app-navbar>
+</header>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading">
-    <div class="spinner"></div>
-    <p>Cargando reportes...</p>
-  </div>
-
-  <!-- Lista de reportes -->
-  <div *ngIf="!loading" class="reportes-lista">
-    <!-- Sin reportes -->
-    <div *ngIf="reportes.length === 0" class="sin-reportes">
-      <h3>No hay reportes disponibles</h3>
-      <p>Sube y analiza mamografías para generar tu primer reporte.</p>
-      <button class="btn-primary" (click)="volver()">Ir a Análisis</button>
-    </div>
-
-    <!-- Tabla de reportes -->
-    <div *ngIf="reportes.length > 0" class="tabla-container">
-      <table class="reportes-tabla">
-        <thead>
-          <tr>
-            <th>Fecha y Hora</th>
-            <th>BI-RADS Dominante</th>
-            <th>Detalles</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let reporte of reportes" class="reporte-fila">
-            <td class="fecha">
-              {{ formatearFecha(reporte.fecha_creacion) }}
-            </td>
-            <td class="birads">
-              <span 
-                class="birads-badge" 
-                [style.background-color]="getBiradsColor(reporte.resultado_birads)">
-                {{ reporte.resultado_birads }}
-              </span>
-            </td>
-            <td class="detalles">
-              <button class="btn-detalles" (click)="mostrarDetalles(reporte)">
-                Ver Detalles
-              </button>
-            </td>
-            <td class="acciones">
-              <button 
-                class="btn-descargar" 
-                (click)="descargarReporte(reporte.id)"
-                title="Descargar reporte en PDF">
-                📄 Descargar PDF
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal de detalles (opcional) -->
-  <div *ngIf="reporteSeleccionado" class="modal-overlay" (click)="cerrarDetalles()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Detalles del Reporte</h3>
-        <button class="btn-cerrar" (click)="cerrarDetalles()">×</button>
+<body>
+  <div class="reportes-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Historial de Reportes</h1>
+      <div class="usuario-info" *ngIf="usuario">
+        <span>Usuario: {{ usuario.nombre }}</span>
       </div>
-      <div class="modal-body">
-        <p><strong>Fecha:</strong> {{ formatearFecha(reporteSeleccionado.fecha_creacion) }}</p>
-        <p><strong>BI-RADS:</strong> {{ reporteSeleccionado.resultado_birads }}</p>
-        <div class="detalles-json">
-          <strong>Resultados detallados:</strong>
-          <pre>{{ reporteSeleccionado.detalles_json }}</pre>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando reportes...</p>
+    </div>
+
+    <!-- Lista de reportes -->
+    <div *ngIf="!loading" class="reportes-lista">
+      <!-- Sin reportes -->
+      <div *ngIf="reportes.length === 0" class="sin-reportes">
+        <h3>No hay reportes disponibles</h3>
+        <p>Sube y analiza mamografías para generar tu primer reporte.</p>
+        <button class="btn-primary" (click)="volver()">Ir a Análisis</button>
+      </div>
+
+      <!-- Tabla de reportes -->
+      <div *ngIf="reportes.length > 0" class="tabla-container">
+        <table class="reportes-tabla">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>BI-RADS Dominante</th>
+              <th>Detalles</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reporte of reportes" class="reporte-fila">
+              <td class="fecha">
+                {{ formatearFecha(reporte.fecha_creacion) }}
+              </td>
+              <td class="birads">
+                <span 
+                  class="birads-badge" 
+                  [style.background-color]="getBiradsColor(reporte.resultado_birads)">
+                  {{ reporte.resultado_birads }}
+                </span>
+              </td>
+              <td class="detalles">
+                <button class="btn-detalles" (click)="mostrarDetalles(reporte)">
+                  Ver Detalles
+                </button>
+              </td>
+              <td class="acciones">
+                <button 
+                  class="btn-descargar" 
+                  (click)="descargarReporte(reporte.id)"
+                  title="Descargar reporte en PDF">
+                  📄 Descargar PDF
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal de detalles (opcional) -->
+    <div *ngIf="reporteSeleccionado" class="modal-overlay" (click)="cerrarDetalles()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Detalles del Reporte</h3>
+          <button class="btn-cerrar" (click)="cerrarDetalles()">×</button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Fecha:</strong> {{ formatearFecha(reporteSeleccionado.fecha_creacion) }}</p>
+          <p><strong>BI-RADS:</strong> {{ reporteSeleccionado.resultado_birads }}</p>
+          <div class="detalles-json">
+            <strong>Resultados detallados:</strong>
+            <pre>{{ reporteSeleccionado.detalles_json }}</pre>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
+</body>
+
