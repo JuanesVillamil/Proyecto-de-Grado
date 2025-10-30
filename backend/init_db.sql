@@ -32,5 +32,3 @@ ON CONFLICT (documento) DO NOTHING;
 -- Crear índices para optimizar consultas
 CREATE INDEX IF NOT EXISTS idx_usuarios_documento ON usuarios(documento);
 CREATE INDEX IF NOT EXISTS idx_usuarios_nombre ON usuarios(nombre);
-
-ALTER TABLE usuarios RENAME COLUMN "usuario" TO documento;
