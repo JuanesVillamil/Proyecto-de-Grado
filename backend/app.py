@@ -54,7 +54,7 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 # Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ Permite todos los orígenes - Solo desarrollo
+    allow_origins=["http://http://35.223.139.97:4200", "http://http://35.223.139.97:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
