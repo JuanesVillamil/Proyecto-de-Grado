@@ -55,7 +55,6 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://35.223.139.97:4200"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )

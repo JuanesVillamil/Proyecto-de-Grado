@@ -57,7 +57,7 @@ export class PerfilComponent implements OnInit {
       
       // Cargar datos completos desde el servidor
       this.loading = true;
-      this.http.get<Usuario>(`${this.apiUrl}/usuario/${userFromStorage.id}`, { withCredentials: true })
+      this.http.get<Usuario>(`${this.apiUrl}/usuario/${userFromStorage.id}`)
         .subscribe({
           next: (usuario) => {
             this.usuario = usuario;
@@ -101,7 +101,7 @@ export class PerfilComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.put(`${this.apiUrl}:8000/usuario/${this.usuario.id}`, this.usuario, { withCredentials: true })
+    this.http.put(`${this.apiUrl}:8000/usuario/${this.usuario.id}`, this.usuario)
       .subscribe({
         next: (response: any) => {
           this.usuarioOriginal = { ...this.usuario };
