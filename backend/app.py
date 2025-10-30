@@ -54,11 +54,10 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 # Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://35.223.139.97:4200", "http://35.223.139.97:8000"],
+    allow_origins=["http://35.223.139.97:4200"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
+    allow_headers=["*"]
 )
 
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")

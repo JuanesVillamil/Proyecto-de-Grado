@@ -75,7 +75,7 @@ export class ReportesComponent implements OnInit {
     console.log(`Cargando reportes para usuario ID: ${this.usuario.id}`); // Debug
     this.loading = true;
     
-    this.http.get<Reporte[]>(`${this.apiUrl}/reportes/${this.usuario.id}`)
+    this.http.get<Reporte[]>(`${this.apiUrl}/reportes/${this.usuario.id}`, { withCredentials: true })
       .subscribe({
         next: (reportes) => {
           console.log('Reportes recibidos:', reportes); // Debug

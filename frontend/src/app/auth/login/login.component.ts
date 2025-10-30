@@ -28,7 +28,7 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.http.post<any>(`${this.apiUrl}/login`, datos).subscribe({
+    this.http.post<any>(`${this.apiUrl}/login`, datos, { withCredentials: true }).subscribe({
       next: (resp) => {
         if (resp.access_token) {
           // Guardar token y datos del usuario
