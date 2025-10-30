@@ -26,12 +26,14 @@ services:
       - ./backend/.env.docker
     volumes:
       - ./backend:/app
+      - images_data:/app/images
     restart: unless-stopped
     networks:
       - birads_network
 
 volumes:
   postgres_data:
+  images_data:
 
 networks:
   birads_network:

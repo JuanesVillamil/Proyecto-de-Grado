@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { API_BASE_URL } from '../../config/api.config';
+import { Location } from '@angular/common';
 
 interface Usuario {
   id: number;
@@ -39,7 +40,8 @@ export class PerfilComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {}
 
   ngOnInit() {
@@ -145,7 +147,7 @@ export class PerfilComponent implements OnInit {
   }
 
   volver() {
-    this.router.navigate(['/home']);
+     this.location.back();
   }
 
   cambiarPassword() {
