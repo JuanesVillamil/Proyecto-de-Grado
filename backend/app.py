@@ -17,13 +17,6 @@ from passlib.hash import bcrypt
 import psycopg2
 import json
 import datetime
-class CORSAwareStaticFiles(StaticFiles):
-    async def get_response(self, path, scope):
-        response: Response = await super().get_response(path, scope)
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
 import shutil
 import os
 import time
@@ -54,7 +47,7 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 # Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://35.223.139.97:4200"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
@@ -63,7 +56,7 @@ app.add_middleware(
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-app.mount("/images", CORSAwareStaticFiles(directory=TEMP_DIR), name="images")
+app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
 
 # Endpoint de salud que no requiere base de datos
 @app.get("/api/health")
