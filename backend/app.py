@@ -17,7 +17,6 @@ from passlib.hash import bcrypt
 import psycopg2
 from psycopg2.extras import Json
 import json
-import datetime
 import shutil
 import os
 import time
@@ -29,11 +28,10 @@ import models
 from fastapi import HTTPException
 from passlib.hash import bcrypt
 from pydantic import BaseModel
-import datetime
 from database import Base, engine, SessionLocal
 # from predict_resnet_multiview import predict_birads_per_view  # Deshabilitado por conflicto PyTorch
 from PIL import Image
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import random
 
 app = FastAPI()
@@ -209,7 +207,6 @@ async def predict(
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None),
     usuario_id: int = None,
-    nombre_paciente: str = None
 ):
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
@@ -317,7 +314,7 @@ async def predict(
 class UsuarioCreate(BaseModel):
     nombre: str
     usuario: str
-    fecha_nacimiento: datetime.date
+    fecha_nacimiento: date
     rol: str
     password: str
     observaciones: str = ""  # Campo opcional con valor por defecto
