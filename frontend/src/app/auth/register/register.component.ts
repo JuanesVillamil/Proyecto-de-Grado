@@ -41,7 +41,6 @@ export class RegisterComponent {
       .subscribe({
         next: () => {
           alert('¡Registro exitoso!');
-          // Limpia el formulario si quieres
         },
         error: (err) => {
           console.error('Error completo:', err);  // Para debug

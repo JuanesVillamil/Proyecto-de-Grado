@@ -47,4 +47,7 @@ export class Navbar {
     this.router.navigate(['/perfil']);
   }
 
+  irAanalisis() {
+    this.router.navigate(['/upload'])
+  }
 }
