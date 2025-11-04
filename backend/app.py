@@ -33,6 +33,8 @@ from database import Base, engine, SessionLocal
 from PIL import Image
 from datetime import date, datetime, timezone
 import random
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 apiUrl = 'http://35.223.139.97:8000'
