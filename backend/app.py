@@ -61,11 +61,11 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
 
 # Endpoint de salud que no requiere base de datos
-@app.get("/api/health")
+@app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Backend funcionando correctamente"}
 
-@app.get("/api/")
+@app.get("/")
 def root():
     return {"message": "API de BI-RADS funcionando", "docs": "/docs"}
 
@@ -200,7 +200,7 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
     os.remove(temp_path)
     return destino
 
-@app.post("/api/predict")
+@app.post("/predict")
 async def predict(
     l_cc: UploadFile = File(None),
     r_cc: UploadFile = File(None),
@@ -319,7 +319,7 @@ class UsuarioCreate(BaseModel):
     password: str
     observaciones: str = ""  # Campo opcional con valor por defecto
 
-@app.post("/api/register")
+@app.post("/register")
 def registrar_usuario(usuario: UsuarioCreate):
     try:
         roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
@@ -381,11 +381,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         )
     return payload
 
-@app.get("/api/usuario-protegido")
+@app.get("/usuario-protegido")
 def usuario_protegido(user: dict = Depends(get_current_user)):
     return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
 
-@app.post("/api/login")
+@app.post("/login")
 def login(datos: dict):
     try:
         usuario = datos.get("usuario", "").strip()
@@ -442,11 +442,11 @@ def login(datos: dict):
         print(f"Error en login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
-@app.post("/api/logout")
+@app.post("/logout")
 def logout():
     return {"message": "Sesión cerrada exitosamente"}
 
-@app.get("/api/reportes/{usuario_id}")
+@app.get("/reportes/{usuario_id}")
 def listar_reportes(usuario_id: int):
     try:
         import subprocess
@@ -490,7 +490,7 @@ def listar_reportes(usuario_id: int):
         print(f"Error listando reportes: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
-@app.get("/api/reportes/detalle/{reporte_id}")
+@app.get("/reportes/detalle/{reporte_id}")
 def obtener_detalle_reporte(reporte_id: int):
     """
     Obtener el detalle completo de un reporte específico
@@ -547,7 +547,7 @@ def obtener_detalle_reporte(reporte_id: int):
         print(f"Error obteniendo detalle reporte: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
-@app.get("/api/reportes/download/{reporte_id}")
+@app.get("/reportes/download/{reporte_id}")
 def descargar_reporte(reporte_id: int):
     """
     Descargar un reporte en formato JSON
@@ -585,7 +585,7 @@ def descargar_reporte(reporte_id: int):
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 # Endpoints para gestión de perfil de usuario
-@app.get("/api/usuario/{usuario_id}")
+@app.get("/usuario/{usuario_id}")
 def obtener_usuario(usuario_id: int):
     """Obtener datos completos de un usuario por ID"""
     try:
@@ -626,7 +626,7 @@ def obtener_usuario(usuario_id: int):
         print(f"Error obteniendo usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
-@app.put("/api/usuario/{usuario_id}")
+@app.put("/usuario/{usuario_id}")
 def actualizar_usuario(usuario_id: int, usuario_data: dict):
     """Actualizar datos de un usuario"""
     try:

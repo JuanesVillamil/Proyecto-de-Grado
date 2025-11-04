@@ -41,6 +41,7 @@ export class RegisterComponent {
       .subscribe({
         next: () => {
           alert('¡Registro exitoso!');
+          this.router.navigate(["/login"])
         },
         error: (err) => {
           console.error('Error completo:', err);  // Para debug
