@@ -37,6 +37,17 @@ import random
 app = FastAPI()
 apiUrl = 'http://35.223.139.97:8000'
 
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    max_body_size = 200 * 1024 * 1024  # 200 MB
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > max_body_size:
+        return JSONResponse(
+            status_code=413,
+            content={"detail": "File too large."}
+        )
+    return await call_next(request)
+
 # Crear tablas automáticamente cuando inicia la aplicación
 # NOTA: Las tablas se crean automáticamente por Docker Y por SQLAlchemy
 try:
