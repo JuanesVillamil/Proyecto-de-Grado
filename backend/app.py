@@ -15,6 +15,7 @@ from fastapi.security import OAuth2PasswordBearer
 from auth import verify_token
 from passlib.hash import bcrypt
 import psycopg2
+from psycopg2.extras import Json
 import json
 import datetime
 import shutil
@@ -32,6 +33,8 @@ import datetime
 from database import Base, engine, SessionLocal
 # from predict_resnet_multiview import predict_birads_per_view  # Deshabilitado por conflicto PyTorch
 from PIL import Image
+from datetime import datetime, timezone
+import random
 
 app = FastAPI()
 apiUrl = 'http://35.223.139.97:8000'
@@ -229,7 +232,6 @@ async def predict(
 
     # Generar resultados simulados mientras se soluciona el modelo ML
     results = {}
-    import random
     
     birads_counts = {}
     for view, path in image_paths.items():
@@ -265,44 +267,50 @@ async def predict(
     # Guardar el reporte en la base de datos si se proporciona usuario_id
     if usuario_id:
         try:
-            import subprocess
-            from datetime import datetime, timezone
-            
+            conn = psycopg2.connect(
+            host="postgres",
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+            )
+            cur = conn.cursor()
+
             # Obtener la fecha y hora exacta del análisis
             fecha_actual = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             
             # Preparar los datos para insertar
             detalles_json = json.dumps(results, ensure_ascii=False)
-            detalles_escaped = detalles_json.replace("'", "''")
-            nombre_paciente_escaped = (nombre_paciente or "Sin especificar").replace("'", "''")
             
             # Insertar reporte usando subprocess con fecha explícita
-            insert_sql = f"""
-            INSERT INTO reportes (usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente) 
-            VALUES ({usuario_id}, '{fecha_actual}', 'BI-RADS {resultado_birads_principal}', '{detalles_escaped}', '{nombre_paciente_escaped}');
-            """
-            
-            result = subprocess.run([
-                "docker", "exec", "-i", "birads_postgres", 
-                "psql", "-U", "postgres", "-d", "birads_db", 
-                "-c", insert_sql
-            ], capture_output=True, text=True)
-            
-            if result.returncode == 0:
-                results["reporte_guardado"] = True
-                results["reporte_info"] = {
-                    "usuario_id": usuario_id,
-                    "resultado_birads": f"BI-RADS {resultado_birads_principal}",
-                    "nombre_paciente": nombre_paciente or "Sin especificar",
-                    "fecha_creacion": fecha_actual
-                }
-            else:
-                results["reporte_guardado"] = False
-                results["reporte_error"] = result.stderr
+            insert_sql = """
+            INSERT INTO reportes (usuario_id, fecha_creacion, resultado_birads, detalles_json)
+            VALUES (%s, %s, %s, %s);"""
+
+            cur.execute(insert_sql, (
+                usuario_id,
+                fecha_actual,
+                f"BI-RADS {resultado_birads_principal}",
+                Json(detalles_json)
+            ))
+
+            conn.commit()
+
+            results["reporte_guardado"] = True
+            results["reporte_info"] = {
+                "usuario_id": usuario_id,
+                "resultado_birads": f"BI-RADS {resultado_birads_principal}",
+                "fecha_creacion": fecha_actual
+            }
                 
         except Exception as e:
             results["reporte_guardado"] = False
             results["reporte_error"] = str(e)
+        
+        finally:
+            if 'cur' in locals():
+                cur.close()
+            if 'conn' in locals():
+                conn.close()
     
     return JSONResponse(content=results)
 
@@ -439,17 +447,10 @@ def login(datos: dict):
 
 @app.post("/api/logout")
 def logout():
-    """
-    Endpoint de logout - En JWT no necesitamos hacer nada en el servidor
-    ya que el token se maneja en el cliente, pero es útil para logging
-    """
     return {"message": "Sesión cerrada exitosamente"}
 
 @app.get("/api/reportes/{usuario_id}")
 def listar_reportes(usuario_id: int):
-    """
-    Listar todos los reportes de un usuario específico
-    """
     try:
         import subprocess
         

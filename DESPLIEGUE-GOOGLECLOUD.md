@@ -9,6 +9,7 @@
 ## Acceder a la CLI de Google Cloud
 0. Si la maquina virtual no esta prendida, correr _gcloud compute instances start instance-20251030-165216_
 1. correr _gcloud compute ssh instance-20251030-165216_
+2. En caso de que la red bloque la conexion (error _ssh: connect to host 35.223.139.97 port 22: Connection refused_), conectarser con _gcloud compute ssh instance-20251030-165216 --tunnel-through-iap_
 2. Ingresar la passphrase
 
 ## Actualizaciones de repositorio
@@ -20,8 +21,8 @@
 
 ## Containers
 1. Navegar a la carpeta del proyecto
-2. Apagar los containers existentes con _sudo docker container down_
-3. Reconstruir los containers con _sudo docker container build_
-4. Activar los containers con _sudo docker container up -d_
+2. Apagar los containers existentes con _sudo docker compose down_
+3. Reconstruir los containers con _sudo docker compose build_
+4. Activar los containers con _sudo docker compose up -d_
 5. Verificar que todos los containers estan activos con _sudo docker ps_
-6. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr 'sudo docker exec -it birads_db psql -U postgres -d birads_postgres'
+6. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr 'sudo docker exec -it birads_postgres psql -U postgres -d birads_db'

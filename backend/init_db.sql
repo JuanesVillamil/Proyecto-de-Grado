@@ -19,8 +19,7 @@ CREATE TABLE IF NOT EXISTS reportes (
     usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resultado_birads VARCHAR(20) NOT NULL,
-    detalles_json TEXT NOT NULL,
-    nombre_paciente VARCHAR(100)
+    detalles_json TEXT NOT NULL
 );
 
 -- Insertar usuario de prueba (opcional)
