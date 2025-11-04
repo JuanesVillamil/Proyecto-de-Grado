@@ -261,7 +261,7 @@ async def predict(
     else:
         resultado_birads_principal = 1
     
-    # Guardar el reporte en la base de datos si se proporciona usuario_id
+    # Guardar el reporte en la base de datos
     if usuario_id:
         try:
             conn = psycopg2.connect(
