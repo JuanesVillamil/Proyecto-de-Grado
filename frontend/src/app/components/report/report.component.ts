@@ -42,21 +42,39 @@ export class ReportComponent implements AfterViewInit {
     let detalles = {};
     const stored = localStorage.getItem('birads_resultado');
     if (stored) {
-      const resultado = JSON.parse(stored);
+      let resultado = JSON.parse(stored);
+      
+      const isSingleView =
+        resultado.birads !== undefined &&
+        !resultado['L-CC'] &&
+        !resultado['R-CC'] &&
+        !resultado['L-MLO'] &&
+        !resultado['R-MLO'];
+
+      if (isSingleView) {
+        resultado = { 'L-CC': resultado }; // Default label, any of the 4 would work
+      }
 
       // Normalize missing confidence values to 0
       Object.keys(resultado).forEach(key => {
-        if (resultado[key].confidence === undefined || resultado[key].confidence === null) {
+        if (
+          resultado[key].confidence === undefined ||
+          resultado[key].confidence === null
+        ) {
           resultado[key].confidence = 0;
         }
       });
+
       detalles = resultado;
+
       const valores = Object.values(resultado)
         .map((v: any) => v.birads)
         .filter((v: any) => typeof v === 'number');
+
       if (valores.length > 0) {
         const maximo = Math.max(...valores);
         birads = maximo.toString();
+        
         const index = valores.indexOf(maximo);
         const clave = Object.keys(resultado)[index];
         const vistaTexto = this.mapVistaLabel(clave);

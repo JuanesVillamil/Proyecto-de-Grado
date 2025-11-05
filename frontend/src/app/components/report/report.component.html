@@ -21,11 +21,12 @@
   </div>
 
   <!-- Clasificación por vista -->
-  <div class="mt-2" *ngIf="datosReporte.detalles">
+  <div class="mt-2" *ngIf="datosReporte.detalles && objectKeys(datosReporte.detalles).length">
     <h3 style="text-align: center">Clasificación por Vista</h3>
     <ul style="text-align: center; list-style: none; padding: 0;">
       <li *ngFor="let vista of objectKeys(datosReporte.detalles)">
-        <i>{{ vista }}</i>: BI-RADS {{ datosReporte.detalles[vista].birads }}
+        <i>{{ vista }}</i>:
+        BI-RADS {{ datosReporte.detalles[vista]?.birads }}
         ({{ (datosReporte.detalles[vista]?.confidence ?? 0).toFixed(2).replace('.', ',') }}%)
       </li>
     </ul>

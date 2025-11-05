@@ -91,7 +91,29 @@ export class ReportesComponent implements OnInit {
 
   descargarReporte(reporteId: number) {
     const url = `${this.apiUrl}/reportes/${reporteId}/download`;
-    window.open(url, '_blank');
+    const token = localStorage.getItem('access_token');
+
+      fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error al descargar: ${response.statusText}`);
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `reporte_${reporteId}.json`;
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+    })
+    .catch(err => console.error('Error al descargar reporte:', err));
   }
 
   getBiradsColor(birads: string): string {
