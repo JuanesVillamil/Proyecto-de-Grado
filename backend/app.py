@@ -219,6 +219,14 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
     os.remove(temp_path)
     return destino
 
+class UsuarioCreate(BaseModel):
+    nombre: str
+    usuario: str
+    fecha_nacimiento: date
+    rol: str
+    password: str
+    observaciones: str = ""  # Campo opcional con valor por defecto
+
 @app.post("/register")
 def registrar_usuario(usuario: UsuarioCreate):
     try:
@@ -282,6 +290,10 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         )
     return payload
 
+@app.get("/usuario-protegido")
+def usuario_protegido(user: dict = Depends(get_current_user)):
+    return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
+
 @app.post("/predict")
 async def predict(
     current_user=Depends(get_current_user),
@@ -289,7 +301,7 @@ async def predict(
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None),
-    usuario_id: int = None,
+    usuario_id: int = None
 ):
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
@@ -396,18 +408,6 @@ async def predict(
                 conn.close()
     
     return JSONResponse(content=results)
-
-class UsuarioCreate(BaseModel):
-    nombre: str
-    usuario: str
-    fecha_nacimiento: date
-    rol: str
-    password: str
-    observaciones: str = ""  # Campo opcional con valor por defecto
-
-@app.get("/usuario-protegido")
-def usuario_protegido(user: dict = Depends(get_current_user)):
-    return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
 
 @app.post("/login")
 def login(datos: dict):
