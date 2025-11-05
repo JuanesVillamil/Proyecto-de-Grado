@@ -358,7 +358,7 @@ async def predict(
     
     # Guardar el reporte en la base de datos
     
-    usuario_id = current_user.get("id")
+    usuario_id = current_user["id"]
     print(f"ID: {usuario_id}")
     if usuario_id:
         try:
@@ -448,7 +448,7 @@ def login(datos: dict):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
         # Crear token
-        access_token = create_access_token(data={"sub": stored_usuario})
+        access_token = create_access_token(data={"sub": stored_usuario, "id": stored_id})
 
         return {
             "access_token": access_token,
@@ -469,7 +469,7 @@ def login(datos: dict):
 @app.post("/storeUser")
 def store_user(user: User, current_user=Depends(get_current_user)):
     return {
-        "message": f"User {user.usuario} stored for {current_user['usuario']}"
+        "message": f"User {user.usuario} stored for {current_user['sub']} (ID: {current_user['id']})"
     }
 
 @app.post("/logout")
