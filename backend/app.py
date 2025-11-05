@@ -409,7 +409,7 @@ def login(datos: dict):
 
         # Conexión directa a la base de datos dentro del contenedor
         conn = psycopg2.connect(
-            host="postgres",        # nombre del servicio del contenedor postgres
+            host="postgres",       
             database="birads_db",
             user="postgres",
             password="postgres"
@@ -462,38 +462,33 @@ def logout():
 @app.get("/reportes/{usuario_id}")
 def listar_reportes(usuario_id: int):
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar reportes del usuario ordenados por fecha descendente
-        query_sql = f"""
-        SELECT id, fecha_creacion, resultado_birads, nombre_paciente 
-        FROM reportes 
-        WHERE usuario_id = {usuario_id} 
-        ORDER BY fecha_creacion DESC;
-        """
-        
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
+        cur.execute("""
+            SELECT id, fecha_creacion, resultado_birads, detalles_json
+            FROM reportes 
+            WHERE usuario_id = %s;
+        """, (usuario_id,))
+
+        records = cur.fetchall()
+        cur.close()
+        conn.close()
         
         # Parsear resultados
         reportes = []
-        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-        
-        for line in lines:
-            parts = line.split('|')
-            if len(parts) >= 4:
-                reportes.append({
-                    "id": int(parts[0].strip()),
-                    "fecha_creacion": parts[1].strip(),
-                    "resultado_birads": parts[2].strip(),
-                    "nombre_paciente": parts[3].strip()
-                })
+        for row in records:
+            reportes.append({
+                "id": row[0],
+                "fecha_creacion": row[1].strftime("%Y-%m-%d %H:%M:%S") if row[1] else None,
+                "resultado_birads": row[2],
+                "detalles_json": row[3]
+            })
         
         return {"reportes": reportes, "total": len(reportes)}
         
@@ -509,47 +504,41 @@ def obtener_detalle_reporte(reporte_id: int):
     Obtener el detalle completo de un reporte específico
     """
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar el reporte específico con todos los detalles
-        query_sql = f"""
-        SELECT id, usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente 
-        FROM reportes 
-        WHERE id = {reporte_id};
-        """
+        cur.execute("""
+            SELECT id, usuario_id, fecha_creacion, resultado_birads, detalles_json
+            FROM reportes 
+            WHERE id = %s;
+        """, (reporte_id,))
+
+        record = cur.cur.fetchone()
+        cur.close()
+        conn.close()
         
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
-        
-        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-        
-        if not lines:
+        if not record:
             raise HTTPException(status_code=404, detail="Reporte no encontrado")
         
-        # Parsear resultado
-        parts = lines[0].split('|')
-        if len(parts) < 6:
-            raise HTTPException(status_code=500, detail="Datos de reporte incompletos")
+        id_, usuario_id, fecha_creacion, resultado_birads, detalles_json = record
         
         # Parsear JSON de detalles
         try:
-            detalles = json.loads(parts[4].strip())
+            detalles = json.loads(detalles_json) if detalles_json else {}
         except json.JSONDecodeError:
             detalles = {}
         
         reporte = {
-            "id": int(parts[0].strip()),
-            "usuario_id": int(parts[1].strip()),
-            "fecha_creacion": parts[2].strip(),
-            "resultado_birads": parts[3].strip(),
-            "detalles": detalles,
-            "nombre_paciente": parts[5].strip()
+            "id": id_,
+            "usuario_id": usuario_id,
+            "fecha_creacion": fecha_creacion.strftime("%Y-%m-%d %H:%M:%S") if fecha_creacion else None,
+            "resultado_birads": resultado_birads,
+            "detalles": detalles
         }
         
         return reporte
@@ -600,48 +589,50 @@ def descargar_reporte(reporte_id: int):
 # Endpoints para gestión de perfil de usuario
 @app.get("/usuario/{usuario_id}")
 def obtener_usuario(usuario_id: int):
-    """Obtener datos completos de un usuario por ID"""
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar usuario usando subprocess
-        select_sql = f"""
-        SELECT id, usuario, nombre, fecha_nacimiento, rol, observaciones 
-        FROM usuarios WHERE id = {usuario_id};
-        """
-        
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-A", "-F", "|", "-c", select_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode == 0 and result.stdout.strip():
-            lines = result.stdout.strip().split('\n')
-            if lines and lines[0].strip():
-                data = lines[0].split('|')
-                if len(data) >= 6:
-                    usuario_data = {
-                        "id": int(data[0]),
-                        "usuario": data[1],
-                        "nombre": data[2],
-                        "fecha_nacimiento": data[3],
-                        "rol": data[4],
-                        "observaciones": data[5] if data[5] else ""
-                    }
-                    return usuario_data
+        cur.execute("""
+            SELECT id, documento, nombre, fecha_nacimiento, rol, observaciones
+            FROM usuarios 
+            WHERE id = %s;
+        """, (usuario_id,))
+
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if result:
+            id_, documento, nombre, fecha_nacimiento, rol, observaciones = result
+            
+            usuario_data = {
+                "id": id_,
+                "usuario": documento,  # 'documento' seems to be the username
+                "nombre": nombre,
+                "fecha_nacimiento": (
+                    fecha_nacimiento.strftime("%Y-%m-%d")
+                    if fecha_nacimiento else None
+                ),
+                "rol": rol,
+                "observaciones": observaciones or ""
+                }
+            
+            return usuario_data
         
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
-    except subprocess.CalledProcessError:
-        raise HTTPException(status_code=500, detail="Error de base de datos")
     except Exception as e:
         print(f"Error obteniendo usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 @app.put("/usuario/{usuario_id}")
 def actualizar_usuario(usuario_id: int, usuario_data: dict):
-    """Actualizar datos de un usuario"""
     try:
         import subprocess
         
@@ -664,23 +655,42 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
             raise HTTPException(status_code=400, detail="Usuario, nombre y fecha de nacimiento son obligatorios")
         
         # Actualizar usuario usando subprocess
-        update_sql = f"""
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+        
+        cur.execute("""
+            UPDATE id, fecha_creacion, resultado_birads, detalles_json
+            FROM reportes 
+            WHERE usuario_id = %s;
+        """, (usuario_id,))
+
+        update_sql = """
         UPDATE usuarios 
-        SET usuario = '{usuario_name}',
-            nombre = '{nombre}',
-            fecha_nacimiento = '{fecha_nacimiento}',
-            rol = '{rol}',
-            observaciones = '{observaciones}'
-        WHERE id = {usuario_id};
+        SET usuario = %s,
+            nombre = %s,
+            fecha_nacimiento = %s,
+            rol = %s,
+            observaciones = %s
+        WHERE id = %s;
         """
+
+        cur.execute(update_sql, (
+            usuario_name,
+            nombre,
+            fecha_nacimiento,
+            rol,
+            observaciones,
+            usuario_id
+            ))
         
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-c", update_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0:
+        conn.commit()
+
+        if cur.rowcount > 0:
             return {
                 "message": "Usuario actualizado correctamente",
                 "usuario": {
@@ -700,3 +710,9 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
     except Exception as e:
         print(f"Error actualizando usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
+    
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()
