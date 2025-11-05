@@ -663,15 +663,9 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
         )
         cur = conn.cursor()
         
-        cur.execute("""
-            UPDATE id, fecha_creacion, resultado_birads, detalles_json
-            FROM reportes 
-            WHERE usuario_id = %s;
-        """, (usuario_id,))
-
         update_sql = """
         UPDATE usuarios 
-        SET usuario = %s,
+        SET documento = %s,
             nombre = %s,
             fecha_nacimiento = %s,
             rol = %s,
