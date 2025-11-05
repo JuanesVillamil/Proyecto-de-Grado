@@ -582,7 +582,6 @@ def descargar_reporte(reporte_id: int):
         reporte_descarga = {
             "id": reporte["id"],
             "fecha_creacion": reporte["fecha_creacion"],
-            "paciente": reporte["nombre_paciente"],
             "resultado_birads": reporte["resultado_birads"],
             "analisis_por_vista": reporte["detalles"],
             "resumen": {
