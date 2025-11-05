@@ -90,7 +90,7 @@ export class ReportesComponent implements OnInit {
   }
 
   descargarReporte(reporteId: number) {
-    const url = `${this.apiUrl}/reportes/${reporteId}/download`;
+    const url = `${this.apiUrl}/reportes/download/${reporteId}`;
     const token = localStorage.getItem('access_token');
 
       fetch(url, {
