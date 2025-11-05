@@ -37,7 +37,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
 apiUrl = 'http://35.223.139.97:8000'
+
+class User(BaseModel):
+    id: int
+    usuario: str
+    nombre: str
 
 @app.middleware("http")
 async def limit_upload_size(request: Request, call_next):
@@ -219,7 +225,7 @@ async def predict(
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None),
-    usuario_id: int = None,
+    usuario_id: int = User.id,
 ):
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
@@ -275,6 +281,8 @@ async def predict(
         resultado_birads_principal = 1
     
     # Guardar el reporte en la base de datos
+    
+    print(f"ID: {usuario_id}")
     if usuario_id:
         try:
             conn = psycopg2.connect(
@@ -454,6 +462,10 @@ def login(datos: dict):
     except Exception as e:
         print(f"Error en login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+@app.post("/storeUser")
+def store_user(user: User, current_user=Depends(get_current_user)):
+    return {"message": f"User {user.usuario} stored for {current_user.usuario}"}
 
 @app.post("/logout")
 def logout():

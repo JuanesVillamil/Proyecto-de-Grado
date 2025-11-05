@@ -35,6 +35,13 @@ export class LoginComponent {
           localStorage.setItem('token', resp.access_token);
           if (resp.user) {
             localStorage.setItem('user', JSON.stringify(resp.user));
+
+            this.http.post(`${this.apiUrl}/storeUser`, resp.user, {
+              headers: { Authorization: `Bearer ${resp.access_token}` }
+            }).subscribe({
+              next: () => console.log('User stored successfully on backend'),
+              error: (err) => console.error('Error storing user:', err)
+            });
           }
           
           // Redirigir a la página principal de la aplicación
