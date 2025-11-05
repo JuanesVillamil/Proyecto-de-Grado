@@ -101,7 +101,7 @@ export class PerfilComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.put(`${this.apiUrl}:8000/usuario/${this.usuario.id}`, this.usuario)
+    this.http.put(`${this.apiUrl}/usuario/${this.usuario.id}`, this.usuario)
       .subscribe({
         next: (response: any) => {
           this.usuarioOriginal = { ...this.usuario };

@@ -289,7 +289,7 @@ async def predict(
             fecha_actual = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             
             # Preparar los datos para insertar
-            detalles_json = json.dumps(results, ensure_ascii=False)
+            detalles_json = results
             
             # Insertar reporte usando subprocess con fecha explícita
             insert_sql = """
