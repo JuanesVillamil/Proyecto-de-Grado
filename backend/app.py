@@ -466,7 +466,9 @@ def login(datos: dict):
 
 @app.post("/storeUser")
 def store_user(user: User, current_user=Depends(get_current_user)):
-    return {"message": f"User {user.usuario} stored for {current_user.usuario}"}
+    return {
+        "message": f"User {user.usuario} stored for {current_user['usuario']}"
+    }
 
 @app.post("/logout")
 def logout():
