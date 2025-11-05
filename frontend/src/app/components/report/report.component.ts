@@ -43,6 +43,13 @@ export class ReportComponent implements AfterViewInit {
     const stored = localStorage.getItem('birads_resultado');
     if (stored) {
       const resultado = JSON.parse(stored);
+
+      // Normalize missing confidence values to 0
+      Object.keys(resultado).forEach(key => {
+        if (resultado[key].confidence === undefined || resultado[key].confidence === null) {
+          resultado[key].confidence = 0;
+        }
+      });
       detalles = resultado;
       const valores = Object.values(resultado)
         .map((v: any) => v.birads)
@@ -114,6 +121,7 @@ export class ReportComponent implements AfterViewInit {
         }
       });
     }
+    console.log('Detalles del reporte:', this.datosReporte.detalles);
   }
   mapVistaLabel(vista: string): string {
     switch (vista.toUpperCase()) {

@@ -90,7 +90,7 @@ export class ReportesComponent implements OnInit {
   }
 
   descargarReporte(reporteId: number) {
-    const url = `${this.apiUrl}:8000/reportes/${reporteId}/download`;
+    const url = `${this.apiUrl}/reportes/${reporteId}/download`;
     window.open(url, '_blank');
   }
 
