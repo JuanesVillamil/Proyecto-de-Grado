@@ -535,7 +535,7 @@ def obtener_detalle_reporte(reporte_id: int):
             WHERE id = %s;
         """, (reporte_id,))
 
-        record = cur.cur.fetchone()
+        record = cur.fetchone()
         cur.close()
         conn.close()
         
@@ -568,13 +568,12 @@ def obtener_detalle_reporte(reporte_id: int):
 
 @app.get("/reportes/download/{reporte_id}")
 def descargar_reporte(reporte_id: int):
-    """
-    Descargar un reporte en formato JSON
-    """
     try:
         # Obtener el reporte completo
+        print(f"Descargando reporte con ID: {reporte_id}")
         reporte = obtener_detalle_reporte(reporte_id)
-        
+        print(f"Reporte obtenido: {reporte}")
+
         # Generar nombre de archivo
         fecha = reporte["fecha_creacion"].split(' ')[0].replace('-', '')
         nombre_archivo = f"reporte_birads_{reporte_id}_{fecha}.json"
@@ -600,7 +599,7 @@ def descargar_reporte(reporte_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error descargando reporte: {str(e)}")
+        print(f"Error descargando reporte {reporte_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 # Endpoints para gestión de perfil de usuario
