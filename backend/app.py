@@ -219,8 +219,72 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
     os.remove(temp_path)
     return destino
 
+@app.post("/register")
+def registrar_usuario(usuario: UsuarioCreate):
+    try:
+        roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
+        if usuario.rol not in roles_permitidos:
+            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
+
+        rol_normalizado = "Administrador" if usuario.rol.lower() == "administrador" else "Radiólogo"
+        password_hash = bcrypt.hash(usuario.password)
+
+        # Connect to Postgres inside Docker network
+        conn = psycopg2.connect(
+            host="postgres",
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+
+        # Verificar si ya existe
+        cur.execute("SELECT COUNT(*) FROM usuarios WHERE documento = %s;", (usuario.usuario,))
+        count = cur.fetchone()[0]
+        if count > 0:
+            raise HTTPException(status_code=400, detail="El usuario ya está registrado")
+
+        # Insertar nuevo usuario
+        cur.execute("""
+            INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, observaciones, password_hash)
+            VALUES (%s, %s, %s, %s, %s, %s);
+        """, (
+            usuario.usuario,
+            usuario.nombre,
+            usuario.fecha_nacimiento.strftime('%Y-%m-%d'),
+            rol_normalizado,
+            usuario.observaciones or "",
+            password_hash
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": "Usuario registrado exitosamente"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en registro: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_token(token)
+    print("Decoded token payload:", payload)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
 @app.post("/predict")
 async def predict(
+    current_user=Depends(get_current_user),
     l_cc: UploadFile = File(None),
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
@@ -282,7 +346,7 @@ async def predict(
     
     # Guardar el reporte en la base de datos
     
-    usuario_id = User.id
+    usuario_id = current_user.get("id")
     print(f"ID: {usuario_id}")
     if usuario_id:
         try:
@@ -340,68 +404,6 @@ class UsuarioCreate(BaseModel):
     rol: str
     password: str
     observaciones: str = ""  # Campo opcional con valor por defecto
-
-@app.post("/register")
-def registrar_usuario(usuario: UsuarioCreate):
-    try:
-        roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
-        if usuario.rol not in roles_permitidos:
-            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
-
-        rol_normalizado = "Administrador" if usuario.rol.lower() == "administrador" else "Radiólogo"
-        password_hash = bcrypt.hash(usuario.password)
-
-        # Connect to Postgres inside Docker network
-        conn = psycopg2.connect(
-            host="postgres",
-            database="birads_db",
-            user="postgres",
-            password="postgres"
-        )
-        cur = conn.cursor()
-
-        # Verificar si ya existe
-        cur.execute("SELECT COUNT(*) FROM usuarios WHERE documento = %s;", (usuario.usuario,))
-        count = cur.fetchone()[0]
-        if count > 0:
-            raise HTTPException(status_code=400, detail="El usuario ya está registrado")
-
-        # Insertar nuevo usuario
-        cur.execute("""
-            INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, observaciones, password_hash)
-            VALUES (%s, %s, %s, %s, %s, %s);
-        """, (
-            usuario.usuario,
-            usuario.nombre,
-            usuario.fecha_nacimiento.strftime('%Y-%m-%d'),
-            rol_normalizado,
-            usuario.observaciones or "",
-            password_hash
-        ))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return {"message": "Usuario registrado exitosamente"}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error en registro: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return payload
 
 @app.get("/usuario-protegido")
 def usuario_protegido(user: dict = Depends(get_current_user)):
