@@ -90,28 +90,24 @@ export class ReportesComponent implements OnInit {
       });
   }
 
-  descargarReporte(reporteId: number) {
+    descargarReporte(reporteId: number) {
     const url = `${this.apiUrl}/reportes/download/${reporteId}`;
     const token = localStorage.getItem('access_token');
 
-      fetch(url, {
+    fetch(url, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {
-      if (!response.ok) {
-        throw new Error(`Error al descargar: ${response.statusText}`);
-      }
-      return response.json(); // Parse JSON directly instead of blob
+      if (!response.ok) throw new Error(`Error al descargar: ${response.statusText}`);
+      return response.json(); // 👈 Get JSON
     })
-    .then(data => {
-      console.log('Reporte recibido:', data);
-      this.descargarPDF(data); // ✅ Generate the PDF right away
+    .then(async data => {
+      await this.descargarPDF(data); // 👈 Generates and downloads PDF
     })
-    .catch(err => console.error('Error al descargar reporte:', err))
+    .catch(err => console.error('Error al descargar reporte:', err));
   }
+
 
   getBiradsColor(birads: string): string {
     switch (birads) {

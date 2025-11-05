@@ -592,7 +592,6 @@ def descargar_reporte(reporte_id: int):
         
         # Retornar como JSON descargable
         response = JSONResponse(content=reporte_descarga)
-        response.headers["Content-Disposition"] = f"attachment; filename={nombre_archivo}"
         return response
         
     except HTTPException:
