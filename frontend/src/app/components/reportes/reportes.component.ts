@@ -75,11 +75,11 @@ export class ReportesComponent implements OnInit {
     console.log(`Cargando reportes para usuario ID: ${this.usuario.id}`); // Debug
     this.loading = true;
     
-    this.http.get<Reporte[]>(`${this.apiUrl}/reportes/${this.usuario.id}`)
+    this.http.get<{ reportes: Reporte[], total: number }>(`${this.apiUrl}/reportes/${this.usuario.id}`)
       .subscribe({
         next: (reportes) => {
           console.log('Reportes recibidos:', reportes); // Debug
-          this.reportes = reportes;
+          this.reportes = reportes.reportes;
           this.loading = false;
         },
         error: (error) => {

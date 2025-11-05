@@ -101,8 +101,12 @@ export class ReportComponent implements AfterViewInit {
             tooltip: {
               callbacks: {
                 label: function (context) {
-                  const value = context.raw as number;
-                  return `${context.label}: ${value.toFixed(2)}%`;
+                  const value = context.raw;
+                  if (typeof value === 'number' && !isNaN(value)) {
+                    return `${context.label}: ${value.toFixed(2)}%`;
+                  } else {
+                    return `${context.label}: N/A`;
+                  }
                 }
               }
             }
@@ -185,7 +189,10 @@ export class ReportComponent implements AfterViewInit {
         const labelText = `${vistaLabel}: `;
         doc.text(labelText, 30, y, { baseline: 'top' });
         doc.setFont('helvetica', 'bold');
-        const porcentajeFormatted = d.confidence.toFixed(2).replace('.', ',');
+        const porcentajeFormatted = 
+            typeof d.confidence === 'number' && !isNaN(d.confidence)
+              ? d.confidence.toFixed(2).replace('.', ',')
+              : 'N/A';
         const resultText = `BI-RADS ${d.birads} (${porcentajeFormatted}%)`;
         doc.text(resultText, 30 + doc.getTextWidth(labelText), y, { baseline: 'top' });
         y += 8;
