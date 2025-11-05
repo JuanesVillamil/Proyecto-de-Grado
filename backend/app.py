@@ -225,7 +225,7 @@ async def predict(
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None),
-    usuario_id: int = User.id,
+    usuario_id: int = None,
 ):
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
@@ -282,6 +282,7 @@ async def predict(
     
     # Guardar el reporte en la base de datos
     
+    usuario_id = User.id
     print(f"ID: {usuario_id}")
     if usuario_id:
         try:

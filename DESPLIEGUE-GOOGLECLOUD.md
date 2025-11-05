@@ -9,8 +9,8 @@
 ## Acceder a la CLI de Google Cloud
 0. Si la maquina virtual no esta prendida, correr _gcloud compute instances start instance-20251030-165216_
 1. correr _gcloud compute ssh instance-20251030-165216_
-2. En caso de que la red bloque la conexion (error _ssh: connect to host 35.223.139.97 port 22: Connection refused_), conectarser con _gcloud compute ssh instance-20251030-165216 --tunnel-through-iap_
-2. Ingresar la passphrase
+2. En caso de que la red bloque la conexion **(ssh: connect to host 35.223.139.97 port 22: Connection refused)**, conectarser con _gcloud compute ssh instance-20251030-165216 --tunnel-through-iap_
+3. Ingresar la passphrase
 
 ## Actualizaciones de repositorio
 1. Navegar a la carpeta del proyecto con _cd Proyecto-de-Grado/_
