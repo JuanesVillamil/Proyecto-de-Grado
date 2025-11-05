@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 import { enviroment } from '../../../../enviroment'
+import jsPDF from 'jspdf';
 
 interface Reporte {
   id: number;
@@ -103,17 +104,13 @@ export class ReportesComponent implements OnInit {
       if (!response.ok) {
         throw new Error(`Error al descargar: ${response.statusText}`);
       }
-      return response.blob();
+      return response.json(); // Parse JSON directly instead of blob
     })
-    .then(blob => {
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = `reporte_${reporteId}.json`;
-      a.click();
-      window.URL.revokeObjectURL(blobUrl);
+    .then(data => {
+      console.log('Reporte recibido:', data);
+      this.descargarPDF(data); // ✅ Generate the PDF right away
     })
-    .catch(err => console.error('Error al descargar reporte:', err));
+    .catch(err => console.error('Error al descargar reporte:', err))
   }
 
   getBiradsColor(birads: string): string {
@@ -148,4 +145,112 @@ export class ReportesComponent implements OnInit {
   cerrarDetalles() {
     this.reporteSeleccionado = null;
   }
+
+  async descargarPDF(reporte: any) {
+    const doc = new jsPDF();
+    let y = 20;
+
+    // === Header ===
+    doc.setFontSize(30);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Reporte de Análisis BI-RADS', 105, y, { align: 'center' });
+    y += 15;
+
+    // === Metadata ===
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`ID del Reporte: ${reporte.id}`, 20, y);
+    y += 7;
+    doc.text(`Fecha de creación: ${reporte.fecha_creacion}`, 20, y);
+    y += 7;
+    doc.text(`Clasificación principal: ${reporte.resultado_birads}`, 20, y);
+    y += 10;
+
+    // === Leyenda BI-RADS ===
+    doc.setFont('helvetica', 'bold');
+    doc.text('Leyenda BI-RADS', 105, y, { align: 'center' });
+    y += 8;
+
+    const leyenda = [
+      ['BI-RADS 1', 'Negativo'],
+      ['BI-RADS 2', 'Hallazgos benignos'],
+      ['BI-RADS 3', 'Probablemente benigno (<2%)'],
+      ['BI-RADS 4', 'Sospechoso, biopsia recomendada'],
+      ['BI-RADS 5', 'Altamente sugestivo de malignidad']
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    for (let [categoria, descripcion] of leyenda) {
+      doc.text(`${categoria}: ${descripcion}`, 25, y);
+      y += 6;
+    }
+    y += 10;
+
+    // === Clasificación por Vista ===
+    doc.setFont('helvetica', 'bold');
+    doc.text('Clasificación por Vista', 105, y, { align: 'center' });
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+
+    const vistas = reporte.analisis_por_vista || {};
+    for (const vista of Object.keys(vistas)) {
+      const d = vistas[vista];
+      const conf = (typeof d.confidence === 'number' && !isNaN(d.confidence))
+        ? `${d.confidence.toFixed(2)}%`
+        : 'N/A';
+      doc.text(`${vista}: BI-RADS ${d.birads} (${conf})`, 25, y);
+      y += 6;
+    }
+
+    y += 15;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.text('Las imágenes procesadas y su análisis se incluirán en las siguientes páginas.', 105, y, { align: 'center' });
+
+    // === Add image pages ===
+    for (const vista of Object.keys(vistas)) {
+      const d = vistas[vista];
+      if (!d.image_url) continue;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = d.image_url;
+
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0);
+          const imgData = canvas.toDataURL('image/jpeg');
+
+          doc.addPage();
+          let pageY = 30;
+          doc.setFontSize(16);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`Vista: ${vista}`, 105, pageY, { align: 'center' });
+          pageY += 10;
+
+          const imgW = 120;
+          const imgH = 130;
+          const imgX = (210 - imgW) / 2;
+          doc.addImage(imgData, 'JPEG', imgX, pageY, imgW, imgH);
+
+          pageY += imgH + 10;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(12);
+          doc.text(d.note || '', 105, pageY, { align: 'center' });
+
+          resolve();
+        };
+        img.onerror = () => resolve();
+      });
+    }
+
+    const fecha = new Date();
+    const timestamp = `${fecha.getFullYear()}-${(fecha.getMonth()+1).toString().padStart(2, '0')}-${fecha.getDate().toString().padStart(2, '0')}_${fecha.getHours().toString().padStart(2, '0')}-${fecha.getMinutes().toString().padStart(2, '0')}`;
+    doc.save(`Reporte_BI-RADS_${timestamp}.pdf`);
+  }
+
 }
