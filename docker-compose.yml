@@ -52,6 +52,7 @@ services:
 volumes:
   postgres_data:
   images_data:
+  hf_cache:
 
 networks:
   birads_network:
