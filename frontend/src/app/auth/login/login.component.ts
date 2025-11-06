@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { enviroment } from '../../../../enviroment'
+import { environment } from '../../../environments/environment'
 
 @Component({
   selector: 'app-login',
@@ -20,7 +20,7 @@ export class LoginComponent {
 
   constructor(private router: Router, private http: HttpClient) {}
   
-  private apiUrl = `${enviroment.apiUrl}`;
+  private apiUrl = `${environment.apiUrl}`;
 
   submit() {
     const datos = {

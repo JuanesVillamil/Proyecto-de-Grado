@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import torch.nn as nn
 from huggingface_hub import hf_hub_download
+import os
 
 def get_model_architecture():
     model = models.resnet18(weights=None)
@@ -18,7 +19,7 @@ REPO_ID = "Enterwar99/MODEL_MAMMOGRAFII"
 FILENAME = "best_model.pth"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)
+model_path = hf_hub_download(repo_id=REPO_ID, filename=FILENAME, token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 model = get_model_architecture()
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)

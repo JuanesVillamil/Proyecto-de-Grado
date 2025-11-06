@@ -1,3 +1,9 @@
+import json
+import shutil
+import os
+import time
+from datetime import date, datetime, timezone
+import random
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,10 +22,6 @@ from auth import verify_token
 from passlib.hash import bcrypt
 import psycopg2
 from psycopg2.extras import Json
-import json
-import shutil
-import os
-import time
 import pydicom
 import numpy as np
 import models
@@ -29,16 +31,15 @@ from fastapi import HTTPException
 from passlib.hash import bcrypt
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
-# from predict_resnet_multiview import predict_birads_per_view  # Deshabilitado por conflicto PyTorch
+from predict_resnet_multiview import predict_birads_per_view
 from PIL import Image
-from datetime import date, datetime, timezone
-import random
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-apiUrl = 'http://35.223.139.97:8000'
+#apiUrl = 'http://35.223.139.97:8000'
+apiUrl = os.getenv("API_ORIGIN")
 
 class User(BaseModel):
     id: int
@@ -65,10 +66,10 @@ except Exception as e:
     print(f"⚠️ Advertencia creando tablas: {e}")
 print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 
-# Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://35.223.139.97:8000", "http://35.223.139.97"],
+    #allow_origins=["http://35.223.139.97:8000", "http://35.223.139.97"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
@@ -303,6 +304,8 @@ async def predict(
     r_mlo: UploadFile = File(None),
     usuario_id: int = None
 ):
+    
+    print(f"url env: {apiUrl}")
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
 

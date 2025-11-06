@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
-import { enviroment } from '../../../../enviroment'
+import { environment } from '../../../environments/environment'
 
 interface Usuario {
   id: number;
@@ -44,7 +44,7 @@ export class PerfilComponent implements OnInit {
     private location: Location
   ) {}
 
-  private apiUrl = `${enviroment.apiUrl}`;
+  private apiUrl = `${environment.apiUrl}`;
 
   ngOnInit() {
     this.cargarDatosUsuario();

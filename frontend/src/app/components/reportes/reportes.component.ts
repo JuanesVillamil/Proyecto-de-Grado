@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
-import { enviroment } from '../../../../enviroment'
+import { environment } from '../../../environments/environment'
 import jsPDF from 'jspdf';
 
 interface Reporte {
@@ -35,7 +35,7 @@ export class ReportesComponent implements OnInit {
     private location: Location
   ) {}
 
-  private apiUrl = `${enviroment.apiUrl}`;
+  private apiUrl = `${environment.apiUrl}`;
 
   ngOnInit() {
     this.cargarUsuario();
