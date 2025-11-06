@@ -38,8 +38,8 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-apiUrl = 'http://localhost:8000'
-#apiUrl = os.getenv("API_ORIGIN")
+#apiUrl = 'http://localhost:8000'
+apiUrl = os.getenv("API_ORIGIN")
 
 class User(BaseModel):
     id: int
@@ -68,8 +68,7 @@ print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 
 app.add_middleware(
     CORSMiddleware,
-    #allow_origins=["http://35.223.139.97:8000", "http://35.223.139.97"],
-    allow_origins=["*"],
+    allow_origins=["http://35.223.139.97:8000", "http://35.223.139.97"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
