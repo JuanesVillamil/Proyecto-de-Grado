@@ -11,6 +11,7 @@ temp/
 Thumbs.db
 
 # --- ENV / CONFIG ---
+.env
 *.env.local
 *.log
 
@@ -34,3 +35,4 @@ out/
 # --- Test coverage ---
 coverage/
 /backend/temp_views
+backend/.env.docker

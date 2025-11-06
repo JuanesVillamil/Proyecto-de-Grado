@@ -38,8 +38,8 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-#apiUrl = 'http://35.223.139.97:8000'
-apiUrl = os.getenv("API_ORIGIN")
+apiUrl = 'http://localhost:8000'
+#apiUrl = os.getenv("API_ORIGIN")
 
 class User(BaseModel):
     id: int
@@ -325,42 +325,19 @@ async def predict(
     if not image_paths:
         return JSONResponse(content={"error": "No se recibió ninguna imagen válida."}, status_code=400)
 
-    # Generar resultados simulados mientras se soluciona el modelo ML
+    # Generar resultados
     results = {}
-    
-    birads_counts = {}
+    birads_principales = {}
+    results = predict_birads_per_view(image_paths)
+
     for view, path in image_paths.items():
         filename = os.path.basename(path)
-        
-        # Simular clasificación BI-RADS (temporal)
-        birads_simulado = random.randint(1, 5)
-        confidence_simulado = round(random.uniform(75.0, 95.0), 2)
-        
-        # Contar BI-RADS para determinar el más frecuente
-        birads_counts[birads_simulado] = birads_counts.get(birads_simulado, 0) + 1
-        
-        # Generar probabilidades simuladas
-        probs = [random.uniform(0, 30) for _ in range(5)]
-        probs[birads_simulado - 1] = confidence_simulado  # Mayor probabilidad para la clase predicha
-        total = sum(probs)
-        probabilidades = [round(p / total * 100, 2) for p in probs]
-        
-        results[view] = {
-            "birads": birads_simulado,
-            "confidence": confidence_simulado,
-            "probabilidades": probabilidades,
-            "image_url": f"{apiUrl}/images/{filename}",
-            "note": "Resultado simulado - Modelo ML temporalmente deshabilitado"
-        }
-    
-    # Determinar BI-RADS más frecuente o el más alto
-    if birads_counts:
-        resultado_birads_principal = max(birads_counts.keys())
-    else:
-        resultado_birads_principal = 1
+        results[view]["image_url"] = f"{apiUrl}/images/{filename}"
+
+    birads_values = [results[view]["birads"] for view in results]
+    birads_principales = max(birads_values)
     
     # Guardar el reporte en la base de datos
-    
     usuario_id = current_user["id"]
     print(f"ID: {usuario_id}")
     if usuario_id:
@@ -387,7 +364,7 @@ async def predict(
             cur.execute(insert_sql, (
                 usuario_id,
                 fecha_actual,
-                f"BI-RADS {resultado_birads_principal}",
+                f"BI-RADS {birads_principales}",
                 Json(detalles_json)
             ))
 
@@ -396,7 +373,7 @@ async def predict(
             results["reporte_guardado"] = True
             results["reporte_info"] = {
                 "usuario_id": usuario_id,
-                "resultado_birads": f"BI-RADS {resultado_birads_principal}",
+                "resultado_birads": f"BI-RADS {birads_principales}",
                 "fecha_creacion": fecha_actual
             }
                 
@@ -410,6 +387,7 @@ async def predict(
             if 'conn' in locals():
                 conn.close()
     
+    print(f"resultados: {results}")
     return JSONResponse(content=results)
 
 @app.post("/login")
