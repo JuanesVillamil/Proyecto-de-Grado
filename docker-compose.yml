@@ -24,9 +24,12 @@ services:
       - postgres
     env_file:
       - ./backend/.env.docker
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
     volumes:
       - ./backend:/app
       - images_data:/app/images
+      - hf_cache:/root/.huggingface
     restart: unless-stopped
     networks:
       - birads_network

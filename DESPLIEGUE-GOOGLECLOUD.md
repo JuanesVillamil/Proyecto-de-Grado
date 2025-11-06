@@ -21,9 +21,10 @@
 
 ## Containers
 1. Navegar a la carpeta del proyecto
-2. Apagar los containers existentes con _sudo docker compose down_
-3. Reconstruir los containers con _sudo docker compose build_
-4. Activar los containers con _sudo docker compose up -d_
-5. Verificar que todos los containers estan activos con _sudo docker ps_
-6. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr 'sudo docker exec -it birads_postgres psql -U postgres -d birads_db'
-7. Si ocurre algun error, leer los logs con _sudo docker logs [container] | tail -n 30_
+2. Obtener el Token de Hugginface con **export HUGGINGFACE_HUB_TOKEN=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attributes/HUGGINGFACE_HUB_TOKEN" -H "Metadata-Flavor: Google")**
+3. Apagar los containers existentes con _sudo docker compose down_
+4. Reconstruir los containers con _sudo docker compose build_
+5. Activar los containers con _sudo docker compose up -d_
+6. Verificar que todos los containers estan activos con _sudo docker ps_
+7. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr 'sudo docker exec -it birads_postgres psql -U postgres -d birads_db'
+8. Si ocurre algun error, leer los logs con _sudo docker logs [container] | tail -n 30_
