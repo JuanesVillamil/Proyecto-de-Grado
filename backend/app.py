@@ -39,7 +39,7 @@ from fastapi.responses import JSONResponse
 app = FastAPI()
 
 #apiUrl = 'http://localhost:8000'
-apiUrl = os.getenv("API_ORIGIN")
+apiUrl = "http://35.223.139.97:8000"
 
 class User(BaseModel):
     id: int
