@@ -77,7 +77,7 @@ app.add_middleware(
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-app.mount("/images", StaticFiles(directory=TEMP_DIR), name="images")
+app.mount("/api/images", StaticFiles(directory=TEMP_DIR), name="images")
 
 # Endpoint de salud que no requiere base de datos
 @app.get("/health")
@@ -331,7 +331,7 @@ async def predict(
 
     for view, path in image_paths.items():
         filename = os.path.basename(path)
-        results[view]["image_url"] = f"{apiUrl}/images/{filename}"
+        results[view]["image_url"] = f"{apiUrl}/api/images/{filename}"
 
     birads_values = [results[view]["birads"] for view in results]
     birads_principales = max(birads_values)
