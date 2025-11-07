@@ -192,6 +192,11 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
 
             im.save(destino)
 
+            if os.path.exists(destino):
+                print(f"[INFO] Imagen guardada correctamente: {destino}")
+            else:
+                print(f"[ERROR] La imagen no se guardó: {destino}")
+
         except Exception as e:
             raise ValueError("No se pudo procesar el archivo DICOM. Verifique su integridad.")
 
