@@ -4,27 +4,26 @@
 1. Acceder a https://docs.cloud.google.com/sdk/docs/install-sdk?hl=es-419
 2. Descargar el archivo correspondiente al sistema operativo 
 3. Seguir los pasos de instalacion
-4. Inicializar la CLI con _gcloud init_
+4. Inicializar la CLI con **gcloud init**
 
 ## Acceder a la CLI de Google Cloud
-0. Si la maquina virtual no esta prendida, correr _gcloud compute instances start instance-20251030-165216_
-1. correr _gcloud compute ssh instance-20251030-165216_
-2. En caso de que la red bloque la conexion **(ssh: connect to host 35.223.139.97 port 22: Connection refused)**, conectarser con _gcloud compute ssh instance-20251030-165216 --tunnel-through-iap_
+0. Si la maquina virtual no esta prendida, correr **gcloud compute instances start instance-20251030-165216**
+1. correr **gcloud compute ssh instance-20251030-165216**
+2. En caso de que la red bloque la conexion **(ssh: connect to host 35.223.139.97 port 22: Connection refused)**, conectarser con **gcloud compute ssh instance-20251030-165216 --tunnel-through-iap**
 3. Ingresar la passphrase
 
 ## Actualizaciones de repositorio
-1. Navegar a la carpeta del proyecto con _cd Proyecto-de-Grado/_
-2. Ejecutar _git pull origin GCDeploy_
-3. Navegar a la carpeta del Frontend con _cd frontend/_
-4. Actualizar el proyecto con _npm install_
-5. Construir la pagina con _npm run build_
+1. Navegar a la carpeta del proyecto con **cd Proyecto-de-Grado/**
+2. Ejecutar **git pull origin GCDeploy**
+3. Navegar a la carpeta del Frontend con **cd frontend/**
+4. Actualizar el proyecto con **npm install**
+5. Construir la pagina con **npm run build**
 
 ## Containers
 1. Navegar a la carpeta del proyecto
-2. Obtener el Token de Hugginface con **export HUGGINGFACE_HUB_TOKEN=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attributes/HUGGINGFACE_HUB_TOKEN" -H "Metadata-Flavor: Google")**
-3. Apagar los containers existentes con _sudo docker compose down_
-4. Reconstruir los containers con _sudo docker compose build_
-5. Activar los containers con _sudo docker compose up -d_
-6. Verificar que todos los containers estan activos con _sudo docker ps_
-7. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr 'sudo docker exec -it birads_postgres psql -U postgres -d birads_db'
-8. Si ocurre algun error, leer los logs con _sudo docker logs [container] | tail -n 30_
+2. Apagar los containers existentes con **sudo docker compose down**
+3. Reconstruir los containers con **sudo docker compose build**
+4. Activar los containers con **sudo docker compose up -d**
+5. Verificar que todos los containers estan activos con **sudo docker ps**
+6. Si se desea acceder a la terminal integrada de Postgres dentro del container, correr **sudo docker exec -it birads_postgres psql -U postgres -d birads_db**
+7. Si ocurre algun error, leer los logs con **_**sudo docker logs [container] | tail -n 30**_**
