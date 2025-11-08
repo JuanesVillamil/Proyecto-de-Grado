@@ -151,9 +151,4 @@ export class PerfilComponent implements OnInit {
   volver() {
      this.location.back();
   }
-
-  cambiarPassword() {
-    // Implementar modal para cambiar contraseña
-    console.log('Cambiar contraseña - Por implementar');
-  }
 }

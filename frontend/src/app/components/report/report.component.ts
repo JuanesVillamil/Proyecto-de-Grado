@@ -139,7 +139,6 @@ export class ReportComponent implements AfterViewInit {
         }
       });
     }
-    console.log('Detalles del reporte:', this.datosReporte.detalles);
   }
   mapVistaLabel(vista: string): string {
     switch (vista.toUpperCase()) {

@@ -47,7 +47,6 @@ export class ReportesComponent implements OnInit {
     if (userData) {
       try {
         this.usuario = JSON.parse(userData);
-        console.log('Usuario cargado:', this.usuario); // Debug
         
         // Verificar que el usuario tenga ID
         if (this.usuario && this.usuario.id) {
@@ -62,7 +61,6 @@ export class ReportesComponent implements OnInit {
       }
     } else {
       // Si no hay usuario, redirigir al login
-      console.log('No hay datos de usuario en localStorage');
       this.router.navigate(['/login']);
     }
   }
@@ -72,14 +70,11 @@ export class ReportesComponent implements OnInit {
       console.error('No se puede cargar reportes: usuario inválido');
       return;
     }
-    
-    console.log(`Cargando reportes para usuario ID: ${this.usuario.id}`); // Debug
     this.loading = true;
     
     this.http.get<{ reportes: Reporte[], total: number }>(`${this.apiUrl}/reportes/${this.usuario.id}`)
       .subscribe({
         next: (reportes) => {
-          console.log('Reportes recibidos:', reportes); // Debug
           this.reportes = reportes.reportes;
           this.loading = false;
         },

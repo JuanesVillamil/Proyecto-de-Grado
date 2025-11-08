@@ -30,8 +30,6 @@ export class Navbar {
       
       // Redirigir a la pantalla principal (login)
       this.router.navigate(['/login']);
-      
-      console.log('Sesión cerrada exitosamente');
     }
   }
 

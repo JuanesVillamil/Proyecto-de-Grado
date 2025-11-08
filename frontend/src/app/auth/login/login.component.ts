@@ -39,7 +39,6 @@ export class LoginComponent {
             this.http.post(`${this.apiUrl}/storeUser`, resp.user, {
               headers: { Authorization: `Bearer ${resp.access_token}` }
             }).subscribe({
-              next: () => console.log('User stored successfully on backend'),
               error: (err) => console.error('Error storing user:', err)
             });
           }
