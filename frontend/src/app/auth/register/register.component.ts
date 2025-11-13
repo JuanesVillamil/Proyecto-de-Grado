@@ -35,7 +35,7 @@ export class RegisterComponent {
     this.http.post(`${this.apiUrl}/register`, datos)
       .subscribe({
         next: () => {
-          alert('¡Registro exitoso!');
+          alert('Registro exitoso, ya puede iniciar sesion');
           this.router.navigate(["/login"])
         },
         error: (err) => {
