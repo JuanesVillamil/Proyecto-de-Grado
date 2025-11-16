@@ -75,21 +75,6 @@
           [class.campo-readonly]="!editMode">
       </div>
 
-      <!-- Rol -->
-      <div class="campo-grupo">
-        <label for="rol">Rol</label>
-        <select 
-          id="rol"
-          name="rol"
-          [(ngModel)]="usuario.rol"
-          [disabled]="!editMode"
-          class="campo-input campo-select"
-          [class.campo-readonly]="!editMode">
-          <option value="Administrador">Administrador</option>
-          <option value="Radiólogo">Radiólogo</option>
-        </select>
-      </div>
-
       <!-- Observaciones -->
       <div class="campo-grupo">
         <label for="observaciones">Observaciones</label>
@@ -123,21 +108,6 @@
       </div>
 
     </form>
-
-    <!-- Información adicional -->
-    <div class="info-adicional" *ngIf="!editMode">
-      <div class="info-card">
-        <h3>Información de la Cuenta</h3>
-        <p><strong>ID de Usuario:</strong> {{ usuario.id }}</p>
-        <p><strong>Última actualización:</strong> Hoy</p>
-        
-        <div class="acciones-cuenta">
-          <button class="btn-cambiar-password" (click)="cambiarPassword()">
-            🔑 Cambiar Contraseña
-          </button>
-        </div>
-      </div>
     </div>
 
   </div>
-</div>

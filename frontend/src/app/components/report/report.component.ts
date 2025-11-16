@@ -42,24 +42,49 @@ export class ReportComponent implements AfterViewInit {
     let detalles = {};
     const stored = localStorage.getItem('birads_resultado');
     if (stored) {
-      const resultado = JSON.parse(stored);
-      detalles = resultado;
-      const valores = Object.values(resultado)
-        .map((v: any) => v.birads)
-        .filter((v: any) => typeof v === 'number');
-      if (valores.length > 0) {
-        const maximo = Math.max(...valores);
-        birads = maximo.toString();
-        const index = valores.indexOf(maximo);
-        const clave = Object.keys(resultado)[index];
-        const vistaTexto = this.mapVistaLabel(clave);
-        resumen = `BI-RADS ${birads} (${vistaTexto})`;
+      try {
+        const resultado = JSON.parse(stored);
+
+        // Only keep entries that look like valid image results (objects with birads)
+        const vistasValidas = Object.keys(resultado)
+          .filter(key => resultado[key] && typeof resultado[key] === 'object' && 'birads' in resultado[key])
+          .reduce((acc: any, key: string) => {
+            acc[key] = resultado[key];
+            return acc;
+          }, {});
+
+        // Normalize missing confidence values
+        Object.values(vistasValidas).forEach((v: any) => {
+          if (v.confidence === undefined || v.confidence === null) {
+            v.confidence = 0;
+          }
+        });
+
+        detalles = vistasValidas;
+
+        // Find the highest BI-RADS value among valid entries
+        const valores = Object.values(vistasValidas)
+          .map((v: any) => v.birads)
+          .filter((v: any) => typeof v === 'number');
+
+        if (valores.length > 0) {
+          const maximo = Math.max(...valores);
+          birads = maximo.toString();
+
+          const index = valores.indexOf(maximo);
+          const clave = Object.keys(vistasValidas)[index];
+          const vistaTexto = this.mapVistaLabel(clave);
+          resumen = `BI-RADS ${birads} (${vistaTexto})`;
+        }
+      } catch (err) {
+        console.error('Error parsing birads_resultado:', err);
       }
     }
+
     this.datosReporte = {
-      birads: birads,
-      resumen: resumen,
-      detalles: detalles
+      birads,
+      resumen,
+      detalles
     };
   }
   ngAfterViewInit(): void {
@@ -101,8 +126,12 @@ export class ReportComponent implements AfterViewInit {
             tooltip: {
               callbacks: {
                 label: function (context) {
-                  const value = context.raw as number;
-                  return `${context.label}: ${value.toFixed(2)}%`;
+                  const value = context.raw;
+                  if (typeof value === 'number' && !isNaN(value)) {
+                    return `${context.label}: ${value.toFixed(2)}%`;
+                  } else {
+                    return `${context.label}: N/A`;
+                  }
                 }
               }
             }
@@ -185,7 +214,10 @@ export class ReportComponent implements AfterViewInit {
         const labelText = `${vistaLabel}: `;
         doc.text(labelText, 30, y, { baseline: 'top' });
         doc.setFont('helvetica', 'bold');
-        const porcentajeFormatted = d.confidence.toFixed(2).replace('.', ',');
+        const porcentajeFormatted = 
+            typeof d.confidence === 'number' && !isNaN(d.confidence)
+              ? d.confidence.toFixed(2).replace('.', ',')
+              : 'N/A';
         const resultText = `BI-RADS ${d.birads} (${porcentajeFormatted}%)`;
         doc.text(resultText, 30 + doc.getTextWidth(labelText), y, { baseline: 'top' });
         y += 8;

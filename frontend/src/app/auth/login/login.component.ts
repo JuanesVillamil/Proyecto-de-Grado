@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment'
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,8 @@ export class LoginComponent {
   registerPassword = '';
 
   constructor(private router: Router, private http: HttpClient) {}
+  
+  private apiUrl = `${environment.apiUrl}`;
 
   submit() {
     const datos = {
@@ -25,13 +28,19 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.http.post<any>('http://localhost:8000/login', datos).subscribe({
+    this.http.post<any>(`${this.apiUrl}/login`, datos).subscribe({
       next: (resp) => {
         if (resp.access_token) {
           // Guardar token y datos del usuario
           localStorage.setItem('token', resp.access_token);
           if (resp.user) {
             localStorage.setItem('user', JSON.stringify(resp.user));
+
+            this.http.post(`${this.apiUrl}/storeUser`, resp.user, {
+              headers: { Authorization: `Bearer ${resp.access_token}` }
+            }).subscribe({
+              error: (err) => console.error('Error storing user:', err)
+            });
           }
           
           // Redirigir a la página principal de la aplicación
@@ -51,7 +60,7 @@ export class LoginComponent {
       password: this.registerPassword
     };
 
-    this.http.post<any>('http://localhost:8000/register', datos).subscribe({
+    this.http.post<any>(this.apiUrl, datos).subscribe({
       next: () => {
         alert('Registro exitoso');
         this.showLogin();

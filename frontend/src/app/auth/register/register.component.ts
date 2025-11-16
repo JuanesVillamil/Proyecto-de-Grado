@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment'
 
 @Component({
   selector: 'app-register',
@@ -15,30 +16,27 @@ export class RegisterComponent {
   usuario = '';  // Cambiado de 'documento' a 'usuario'
   fechaNacimiento = '';
   password = '';
-  rol = 'Radiólogo'; // Valor predeterminado con mayúscula
+  rol = ''; // Valor predeterminado con mayúscula
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  submit() {
-    if (!this.rol) {
-      alert('Por favor seleccione un rol antes de continuar.');
-      return;
-    }
+  private apiUrl = `${environment.apiUrl}`;
 
+  submit() {
     const datos = {
       nombre: this.nombre,
       usuario: this.usuario,  // Cambiado de 'documento' a 'usuario'
       fecha_nacimiento: this.fechaNacimiento,
-      rol: this.rol,
+      rol: 'Radiólogo',
       password: this.password,
       observaciones: ""  // Agregar campo observaciones
     };
 
-    this.http.post('http://localhost:8000/register', datos)
+    this.http.post(`${this.apiUrl}/register`, datos)
       .subscribe({
         next: () => {
-          alert('¡Registro exitoso!');
-          // Limpia el formulario si quieres
+          alert('Registro exitoso, ya puede iniciar sesion');
+          this.router.navigate(["/login"])
         },
         error: (err) => {
           console.error('Error completo:', err);  // Para debug

@@ -35,3 +35,4 @@ out/
 # --- Test coverage ---
 coverage/
 /backend/temp_views
+backend/.env.docker

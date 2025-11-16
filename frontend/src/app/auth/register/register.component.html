@@ -5,7 +5,7 @@
     <div class="form-row">
       <input
         type="text"
-        placeholder="Usuario"
+        placeholder="Documento"
         name="usuario"
         [(ngModel)]="usuario"
         required
@@ -20,6 +20,7 @@
     </div>
 
     <div class="form-row">
+      <label for="fechaNacimiento">Fecha de nacimiento</label>
       <input
         type="date"
         placeholder="Fecha de nacimiento"
@@ -27,15 +28,6 @@
         [(ngModel)]="fechaNacimiento"
         required
       />
-      <select
-        name="rol"
-        [(ngModel)]="rol"
-        required
-      >
-        <option value="" disabled>Seleccione un rol</option>
-        <option value="Radiólogo">Radiólogo</option>
-        <option value="Administrador">Administrador</option>
-      </select>
     </div>
 
     <div class="form-row">

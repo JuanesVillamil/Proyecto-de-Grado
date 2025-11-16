@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { BiradsService } from '../../services/birads.service';
 import { FormsModule } from '@angular/forms';
 import { Navbar } from "../navbar/navbar";
+import { HttpHeaders } from '@angular/common/http';
 @Component({
   standalone: true,
   selector: 'app-upload',
@@ -19,6 +20,7 @@ export class UploadComponent {
     private router: Router,
     private biradsService: BiradsService
   ) {}
+
   onFilesSelected(event: any, tipo: string) {
     const archivo: File = event.target.files[0];
     if (archivo) {

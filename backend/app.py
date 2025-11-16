@@ -1,3 +1,9 @@
+import json
+import shutil
+import os
+import time
+from datetime import date, datetime, timezone
+import random
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,18 +20,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from auth import verify_token
 from passlib.hash import bcrypt
-import json
-import datetime
-class CORSAwareStaticFiles(StaticFiles):
-    async def get_response(self, path, scope):
-        response: Response = await super().get_response(path, scope)
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-import shutil
-import os
-import time
+import psycopg2
+from psycopg2.extras import Json
 import pydicom
 import numpy as np
 import models
@@ -34,12 +30,32 @@ import models
 from fastapi import HTTPException
 from passlib.hash import bcrypt
 from pydantic import BaseModel
-import datetime
 from database import Base, engine, SessionLocal
-# from predict_resnet_multiview import predict_birads_per_view  # Deshabilitado por conflicto PyTorch
+from predict_resnet_multiview import predict_birads_per_view
 from PIL import Image
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+#apiUrl = 'http://localhost:8000'
+apiUrl = "http://35.223.139.97:8000"
+
+class User(BaseModel):
+    id: int
+    usuario: str
+    nombre: str
+
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    max_body_size = 200 * 1024 * 1024  # 200 MB
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > max_body_size:
+        return JSONResponse(
+            status_code=413,
+            content={"detail": "File too large."}
+        )
+    return await call_next(request)
 
 # Crear tablas automáticamente cuando inicia la aplicación
 # NOTA: Las tablas se crean automáticamente por Docker Y por SQLAlchemy
@@ -50,11 +66,9 @@ except Exception as e:
     print(f"⚠️ Advertencia creando tablas: {e}")
 print("✅ Backend iniciado - Usando base de datos Docker PostgreSQL")
 
-# Middleware CORS - Configuración MUY permisiva para desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ Permite todos los orígenes - Solo desarrollo
-    allow_credentials=True,
+    allow_origins=["http://35.223.139.97:8000", "http://35.223.139.97"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
@@ -63,7 +77,7 @@ app.add_middleware(
 TEMP_DIR = os.path.join(os.path.dirname(__file__), "temp_views")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-app.mount("/images", CORSAwareStaticFiles(directory=TEMP_DIR), name="images")
+app.mount("/api/images", StaticFiles(directory=TEMP_DIR), name="images")
 
 # Endpoint de salud que no requiere base de datos
 @app.get("/health")
@@ -178,6 +192,11 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
 
             im.save(destino)
 
+            if os.path.exists(destino):
+                print(f"[INFO] Imagen guardada correctamente: {destino}")
+            else:
+                print(f"[ERROR] La imagen no se guardó: {destino}")
+
         except Exception as e:
             raise ValueError("No se pudo procesar el archivo DICOM. Verifique su integridad.")
 
@@ -205,15 +224,92 @@ def guardar_y_convertir_a_rgb(upload_file: UploadFile, nombre_archivo: str) -> s
     os.remove(temp_path)
     return destino
 
+class UsuarioCreate(BaseModel):
+    nombre: str
+    usuario: str
+    fecha_nacimiento: date
+    rol: str
+    password: str
+    observaciones: str = ""  # Campo opcional con valor por defecto
+
+@app.post("/register")
+def registrar_usuario(usuario: UsuarioCreate):
+    try:
+        roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
+        if usuario.rol not in roles_permitidos:
+            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
+
+        rol_normalizado = "Administrador" if usuario.rol.lower() == "administrador" else "Radiólogo"
+        password_hash = bcrypt.hash(usuario.password)
+
+        # Connect to Postgres inside Docker network
+        conn = psycopg2.connect(
+            host="postgres",
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+
+        # Verificar si ya existe
+        cur.execute("SELECT COUNT(*) FROM usuarios WHERE documento = %s;", (usuario.usuario,))
+        count = cur.fetchone()[0]
+        if count > 0:
+            raise HTTPException(status_code=400, detail="El usuario ya está registrado")
+
+        # Insertar nuevo usuario
+        cur.execute("""
+            INSERT INTO usuarios (documento, nombre, fecha_nacimiento, rol, observaciones, password_hash)
+            VALUES (%s, %s, %s, %s, %s, %s);
+        """, (
+            usuario.usuario,
+            usuario.nombre,
+            usuario.fecha_nacimiento.strftime('%Y-%m-%d'),
+            rol_normalizado,
+            usuario.observaciones or "",
+            password_hash
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": "Usuario registrado exitosamente"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en registro: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_token(token)
+    print("Decoded token payload:", payload)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+@app.get("/usuario-protegido")
+def usuario_protegido(user: dict = Depends(get_current_user)):
+    return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
+
 @app.post("/predict")
 async def predict(
+    current_user=Depends(get_current_user),
     l_cc: UploadFile = File(None),
     r_cc: UploadFile = File(None),
     l_mlo: UploadFile = File(None),
     r_mlo: UploadFile = File(None),
-    usuario_id: int = None,
-    nombre_paciente: str = None
+    usuario_id: int = None
 ):
+    
+    print(f"url env: {apiUrl}")
     for f in os.listdir(TEMP_DIR):
         os.remove(os.path.join(TEMP_DIR, f))
 
@@ -233,272 +329,168 @@ async def predict(
     if not image_paths:
         return JSONResponse(content={"error": "No se recibió ninguna imagen válida."}, status_code=400)
 
-    # Generar resultados simulados mientras se soluciona el modelo ML
+    # Generar resultados
     results = {}
-    import random
-    
-    birads_counts = {}
+    birads_principales = {}
+    results = predict_birads_per_view(image_paths)
+
     for view, path in image_paths.items():
         filename = os.path.basename(path)
-        
-        # Simular clasificación BI-RADS (temporal)
-        birads_simulado = random.randint(1, 5)
-        confidence_simulado = round(random.uniform(75.0, 95.0), 2)
-        
-        # Contar BI-RADS para determinar el más frecuente
-        birads_counts[birads_simulado] = birads_counts.get(birads_simulado, 0) + 1
-        
-        # Generar probabilidades simuladas
-        probs = [random.uniform(0, 30) for _ in range(5)]
-        probs[birads_simulado - 1] = confidence_simulado  # Mayor probabilidad para la clase predicha
-        total = sum(probs)
-        probabilidades = [round(p / total * 100, 2) for p in probs]
-        
-        results[view] = {
-            "birads": birads_simulado,
-            "confidence": confidence_simulado,
-            "probabilidades": probabilidades,
-            "image_url": f"http://127.0.0.1:8000/images/{filename}",
-            "note": "Resultado simulado - Modelo ML temporalmente deshabilitado"
-        }
+        results[view]["image_url"] = f"{apiUrl}/api/images/{filename}"
+
+    birads_values = [results[view]["birads"] for view in results]
+    birads_principales = max(birads_values)
     
-    # Determinar BI-RADS más frecuente o el más alto
-    if birads_counts:
-        resultado_birads_principal = max(birads_counts.keys())
-    else:
-        resultado_birads_principal = 1
-    
-    # Guardar el reporte en la base de datos si se proporciona usuario_id
+    # Guardar el reporte en la base de datos
+    usuario_id = current_user["id"]
+    print(f"ID: {usuario_id}")
     if usuario_id:
         try:
-            import subprocess
-            from datetime import datetime, timezone
-            
+            conn = psycopg2.connect(
+            host="postgres",
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+            )
+            cur = conn.cursor()
+
             # Obtener la fecha y hora exacta del análisis
             fecha_actual = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             
             # Preparar los datos para insertar
-            detalles_json = json.dumps(results, ensure_ascii=False)
-            detalles_escaped = detalles_json.replace("'", "''")
-            nombre_paciente_escaped = (nombre_paciente or "Sin especificar").replace("'", "''")
+            detalles_json = results
             
             # Insertar reporte usando subprocess con fecha explícita
-            insert_sql = f"""
-            INSERT INTO reportes (usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente) 
-            VALUES ({usuario_id}, '{fecha_actual}', 'BI-RADS {resultado_birads_principal}', '{detalles_escaped}', '{nombre_paciente_escaped}');
-            """
-            
-            result = subprocess.run([
-                "docker", "exec", "-i", "birads_postgres", 
-                "psql", "-U", "postgres", "-d", "birads_db", 
-                "-c", insert_sql
-            ], capture_output=True, text=True)
-            
-            if result.returncode == 0:
-                results["reporte_guardado"] = True
-                results["reporte_info"] = {
-                    "usuario_id": usuario_id,
-                    "resultado_birads": f"BI-RADS {resultado_birads_principal}",
-                    "nombre_paciente": nombre_paciente or "Sin especificar",
-                    "fecha_creacion": fecha_actual
-                }
-            else:
-                results["reporte_guardado"] = False
-                results["reporte_error"] = result.stderr
+            insert_sql = """
+            INSERT INTO reportes (usuario_id, fecha_creacion, resultado_birads, detalles_json)
+            VALUES (%s, %s, %s, %s);"""
+
+            cur.execute(insert_sql, (
+                usuario_id,
+                fecha_actual,
+                f"BI-RADS {birads_principales}",
+                Json(detalles_json)
+            ))
+
+            conn.commit()
+
+            results["reporte_guardado"] = True
+            results["reporte_info"] = {
+                "usuario_id": usuario_id,
+                "resultado_birads": f"BI-RADS {birads_principales}",
+                "fecha_creacion": fecha_actual
+            }
                 
         except Exception as e:
             results["reporte_guardado"] = False
             results["reporte_error"] = str(e)
+        
+        finally:
+            if 'cur' in locals():
+                cur.close()
+            if 'conn' in locals():
+                conn.close()
     
+    print(f"resultados: {results}")
     return JSONResponse(content=results)
-
-class UsuarioCreate(BaseModel):
-    nombre: str
-    usuario: str
-    fecha_nacimiento: datetime.date
-    rol: str
-    password: str
-    observaciones: str = ""  # Campo opcional con valor por defecto
-
-@app.post("/register")
-def registrar_usuario(usuario: UsuarioCreate):
-    try:
-        # Validar que el rol sea uno de los permitidos
-        roles_permitidos = ["Administrador", "Radiólogo", "administrador", "radiologo"]
-        if usuario.rol not in roles_permitidos:
-            raise HTTPException(status_code=400, detail="Rol no válido. Solo se permiten: Administrador, Radiólogo")
-        
-        # Normalizar el rol
-        if usuario.rol.lower() == "administrador":
-            rol_normalizado = "Administrador"
-        elif usuario.rol.lower() == "radiologo":
-            rol_normalizado = "Radiólogo"
-        else:
-            rol_normalizado = usuario.rol
-        
-        # Usar subprocess para evitar problemas de codificación con psycopg2
-        import subprocess
-        
-        # Escapar comillas en los datos
-        usuario_name = usuario.usuario.replace("'", "''")
-        nombre = usuario.nombre.replace("'", "''")
-        fecha = usuario.fecha_nacimiento.strftime('%Y-%m-%d')
-        rol = rol_normalizado.replace("'", "''")
-        observaciones = usuario.observaciones.replace("'", "''") if usuario.observaciones else ""
-        password_hash = bcrypt.hash(usuario.password)
-        
-        # Verificar si ya existe
-        check_sql = f"SELECT COUNT(*) FROM usuarios WHERE usuario = '{usuario_name}';"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", check_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0 and int(result.stdout.strip()) > 0:
-            raise HTTPException(status_code=400, detail="El usuario ya está registrado")
-        
-        # Insertar nuevo usuario (incluyendo observaciones del modelo)
-        insert_sql = f"INSERT INTO usuarios (usuario, nombre, fecha_nacimiento, rol, observaciones, password_hash) VALUES ('{usuario_name}', '{nombre}', '{fecha}', '{rol}', '{observaciones}', '{password_hash}');"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-c", insert_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0:
-            return {"message": "Usuario registrado exitosamente"}
-        else:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
-                
-    except HTTPException:
-        # Re-lanzar HTTPExceptions específicas
-        raise
-    except Exception as e:
-        # Manejar otros errores
-        print(f"Error en registro: {str(e)}")  # Para debug
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return payload
-
-@app.get("/usuario-protegido")
-def usuario_protegido(user: dict = Depends(get_current_user)):
-    return {"mensaje": f"Hola, usuario autenticado: {user['sub']}"}
 
 @app.post("/login")
 def login(datos: dict):
     try:
-        usuario = datos.get("usuario", "").replace("'", "''")
-        password = datos.get("password", "")
-        
+        usuario = datos.get("usuario", "").strip()
+        password = datos.get("password", "").strip()
+
         if not usuario or not password:
             raise HTTPException(status_code=400, detail="Usuario y contraseña son requeridos")
-        
-        # Buscar usuario en la base de datos usando subprocess
-        import subprocess
-        
-        query_sql = f"SELECT id, usuario, nombre, password_hash FROM usuarios WHERE usuario = '{usuario}';"
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail="Error de conexión a la base de datos")
-        
-        lines = result.stdout.strip().split('\n')
-        if not lines or lines[0].strip() == '':
+
+        # Conexión directa a la base de datos dentro del contenedor
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+
+        # Buscar usuario
+        cur.execute("""
+            SELECT id, documento, nombre, password_hash 
+            FROM usuarios 
+            WHERE documento = %s;
+        """, (usuario,))
+
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not row:
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        # Parsear resultado
-        user_data = lines[0].strip().split('|')
-        if len(user_data) < 4:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
-        stored_id = user_data[0].strip()
-        stored_usuario = user_data[1].strip()
-        stored_nombre = user_data[2].strip()
-        stored_password_hash = user_data[3].strip()
-        
+
+        stored_id, stored_usuario, stored_nombre, stored_password_hash = row
+
         # Verificar contraseña
         if not bcrypt.verify(password, stored_password_hash):
             raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        
+
         # Crear token
-        access_token = create_access_token(data={"sub": stored_usuario})
+        access_token = create_access_token(data={"sub": stored_usuario, "id": stored_id})
+
         return {
-            "access_token": access_token, 
-            "token_type": "bearer", 
+            "access_token": access_token,
+            "token_type": "bearer",
             "user": {
-                "id": int(stored_id),
-                "usuario": stored_usuario, 
+                "id": stored_id,
+                "usuario": stored_usuario,
                 "nombre": stored_nombre
             }
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error en login: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error interno del servidor")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+@app.post("/storeUser")
+def store_user(user: User, current_user=Depends(get_current_user)):
+    return {
+        "message": f"User {user.usuario} stored for {current_user['sub']} (ID: {current_user['id']})"
+    }
 
 @app.post("/logout")
 def logout():
-    """
-    Endpoint de logout - En JWT no necesitamos hacer nada en el servidor
-    ya que el token se maneja en el cliente, pero es útil para logging
-    """
     return {"message": "Sesión cerrada exitosamente"}
 
 @app.get("/reportes/{usuario_id}")
 def listar_reportes(usuario_id: int):
-    """
-    Listar todos los reportes de un usuario específico
-    """
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar reportes del usuario ordenados por fecha descendente
-        query_sql = f"""
-        SELECT id, fecha_creacion, resultado_birads, nombre_paciente 
-        FROM reportes 
-        WHERE usuario_id = {usuario_id} 
-        ORDER BY fecha_creacion DESC;
-        """
-        
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
+        cur.execute("""
+            SELECT id, fecha_creacion, resultado_birads, detalles_json
+            FROM reportes 
+            WHERE usuario_id = %s;
+        """, (usuario_id,))
+
+        records = cur.fetchall()
+        cur.close()
+        conn.close()
         
         # Parsear resultados
         reportes = []
-        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-        
-        for line in lines:
-            parts = line.split('|')
-            if len(parts) >= 4:
-                reportes.append({
-                    "id": int(parts[0].strip()),
-                    "fecha_creacion": parts[1].strip(),
-                    "resultado_birads": parts[2].strip(),
-                    "nombre_paciente": parts[3].strip()
-                })
+        for row in records:
+            reportes.append({
+                "id": row[0],
+                "fecha_creacion": row[1].strftime("%Y-%m-%d %H:%M:%S") if row[1] else None,
+                "resultado_birads": row[2],
+                "detalles_json": row[3]
+            })
         
         return {"reportes": reportes, "total": len(reportes)}
         
@@ -514,47 +506,41 @@ def obtener_detalle_reporte(reporte_id: int):
     Obtener el detalle completo de un reporte específico
     """
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar el reporte específico con todos los detalles
-        query_sql = f"""
-        SELECT id, usuario_id, fecha_creacion, resultado_birads, detalles_json, nombre_paciente 
-        FROM reportes 
-        WHERE id = {reporte_id};
-        """
+        cur.execute("""
+            SELECT id, usuario_id, fecha_creacion, resultado_birads, detalles_json
+            FROM reportes 
+            WHERE id = %s;
+        """, (reporte_id,))
+
+        record = cur.fetchone()
+        cur.close()
+        conn.close()
         
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-c", query_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Error en la base de datos: {result.stderr}")
-        
-        lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-        
-        if not lines:
+        if not record:
             raise HTTPException(status_code=404, detail="Reporte no encontrado")
         
-        # Parsear resultado
-        parts = lines[0].split('|')
-        if len(parts) < 6:
-            raise HTTPException(status_code=500, detail="Datos de reporte incompletos")
+        id_, usuario_id, fecha_creacion, resultado_birads, detalles_json = record
         
         # Parsear JSON de detalles
         try:
-            detalles = json.loads(parts[4].strip())
+            detalles = json.loads(detalles_json) if detalles_json else {}
         except json.JSONDecodeError:
             detalles = {}
         
         reporte = {
-            "id": int(parts[0].strip()),
-            "usuario_id": int(parts[1].strip()),
-            "fecha_creacion": parts[2].strip(),
-            "resultado_birads": parts[3].strip(),
-            "detalles": detalles,
-            "nombre_paciente": parts[5].strip()
+            "id": id_,
+            "usuario_id": usuario_id,
+            "fecha_creacion": fecha_creacion.strftime("%Y-%m-%d %H:%M:%S") if fecha_creacion else None,
+            "resultado_birads": resultado_birads,
+            "detalles": detalles
         }
         
         return reporte
@@ -567,13 +553,12 @@ def obtener_detalle_reporte(reporte_id: int):
 
 @app.get("/reportes/download/{reporte_id}")
 def descargar_reporte(reporte_id: int):
-    """
-    Descargar un reporte en formato JSON
-    """
     try:
         # Obtener el reporte completo
+        print(f"Descargando reporte con ID: {reporte_id}")
         reporte = obtener_detalle_reporte(reporte_id)
-        
+        print(f"Reporte obtenido: {reporte}")
+
         # Generar nombre de archivo
         fecha = reporte["fecha_creacion"].split(' ')[0].replace('-', '')
         nombre_archivo = f"reporte_birads_{reporte_id}_{fecha}.json"
@@ -582,7 +567,6 @@ def descargar_reporte(reporte_id: int):
         reporte_descarga = {
             "id": reporte["id"],
             "fecha_creacion": reporte["fecha_creacion"],
-            "paciente": reporte["nombre_paciente"],
             "resultado_birads": reporte["resultado_birads"],
             "analisis_por_vista": reporte["detalles"],
             "resumen": {
@@ -593,60 +577,61 @@ def descargar_reporte(reporte_id: int):
         
         # Retornar como JSON descargable
         response = JSONResponse(content=reporte_descarga)
-        response.headers["Content-Disposition"] = f"attachment; filename={nombre_archivo}"
         return response
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error descargando reporte: {str(e)}")
+        print(f"Error descargando reporte {reporte_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 # Endpoints para gestión de perfil de usuario
 @app.get("/usuario/{usuario_id}")
 def obtener_usuario(usuario_id: int):
-    """Obtener datos completos de un usuario por ID"""
     try:
-        import subprocess
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
         
-        # Consultar usuario usando subprocess
-        select_sql = f"""
-        SELECT id, usuario, nombre, fecha_nacimiento, rol, observaciones 
-        FROM usuarios WHERE id = {usuario_id};
-        """
-        
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-t", "-A", "-F", "|", "-c", select_sql
-        ], capture_output=True, text=True)
-        
-        if result.returncode == 0 and result.stdout.strip():
-            lines = result.stdout.strip().split('\n')
-            if lines and lines[0].strip():
-                data = lines[0].split('|')
-                if len(data) >= 6:
-                    usuario_data = {
-                        "id": int(data[0]),
-                        "usuario": data[1],
-                        "nombre": data[2],
-                        "fecha_nacimiento": data[3],
-                        "rol": data[4],
-                        "observaciones": data[5] if data[5] else ""
-                    }
-                    return usuario_data
+        cur.execute("""
+            SELECT id, documento, nombre, fecha_nacimiento, rol, observaciones
+            FROM usuarios 
+            WHERE id = %s;
+        """, (usuario_id,))
+
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if result:
+            id_, documento, nombre, fecha_nacimiento, rol, observaciones = result
+            
+            usuario_data = {
+                "id": id_,
+                "usuario": documento,  # 'documento' seems to be the username
+                "nombre": nombre,
+                "fecha_nacimiento": (
+                    fecha_nacimiento.strftime("%Y-%m-%d")
+                    if fecha_nacimiento else None
+                ),
+                "rol": rol,
+                "observaciones": observaciones or ""
+                }
+            
+            return usuario_data
         
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
-    except subprocess.CalledProcessError:
-        raise HTTPException(status_code=500, detail="Error de base de datos")
     except Exception as e:
         print(f"Error obteniendo usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 @app.put("/usuario/{usuario_id}")
 def actualizar_usuario(usuario_id: int, usuario_data: dict):
-    """Actualizar datos de un usuario"""
     try:
         import subprocess
         
@@ -669,23 +654,36 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
             raise HTTPException(status_code=400, detail="Usuario, nombre y fecha de nacimiento son obligatorios")
         
         # Actualizar usuario usando subprocess
-        update_sql = f"""
+        conn = psycopg2.connect(
+            host="postgres",       
+            database="birads_db",
+            user="postgres",
+            password="postgres"
+        )
+        cur = conn.cursor()
+        
+        update_sql = """
         UPDATE usuarios 
-        SET usuario = '{usuario_name}',
-            nombre = '{nombre}',
-            fecha_nacimiento = '{fecha_nacimiento}',
-            rol = '{rol}',
-            observaciones = '{observaciones}'
-        WHERE id = {usuario_id};
+        SET documento = %s,
+            nombre = %s,
+            fecha_nacimiento = %s,
+            rol = %s,
+            observaciones = %s
+        WHERE id = %s;
         """
+
+        cur.execute(update_sql, (
+            usuario_name,
+            nombre,
+            fecha_nacimiento,
+            rol,
+            observaciones,
+            usuario_id
+            ))
         
-        result = subprocess.run([
-            "docker", "exec", "-i", "birads_postgres", 
-            "psql", "-U", "postgres", "-d", "birads_db", 
-            "-c", update_sql
-        ], capture_output=True, text=True, encoding='utf-8')
-        
-        if result.returncode == 0:
+        conn.commit()
+
+        if cur.rowcount > 0:
             return {
                 "message": "Usuario actualizado correctamente",
                 "usuario": {
@@ -705,3 +703,9 @@ def actualizar_usuario(usuario_id: int, usuario_data: dict):
     except Exception as e:
         print(f"Error actualizando usuario: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
+    
+    finally:
+        if 'cur' in locals():
+            cur.close()
+        if 'conn' in locals():
+            conn.close()

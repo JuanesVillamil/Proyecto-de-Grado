@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { environment } from '../../../environments/environment'
 
 interface Usuario {
   id: number;
@@ -38,8 +40,11 @@ export class PerfilComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {}
+
+  private apiUrl = `${environment.apiUrl}`;
 
   ngOnInit() {
     this.cargarDatosUsuario();
@@ -52,7 +57,7 @@ export class PerfilComponent implements OnInit {
       
       // Cargar datos completos desde el servidor
       this.loading = true;
-      this.http.get<Usuario>(`http://localhost:8000/usuario/${userFromStorage.id}`)
+      this.http.get<Usuario>(`${this.apiUrl}/usuario/${userFromStorage.id}`)
         .subscribe({
           next: (usuario) => {
             this.usuario = usuario;
@@ -96,7 +101,7 @@ export class PerfilComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.put(`http://localhost:8000/usuario/${this.usuario.id}`, this.usuario)
+    this.http.put(`${this.apiUrl}/usuario/${this.usuario.id}`, this.usuario)
       .subscribe({
         next: (response: any) => {
           this.usuarioOriginal = { ...this.usuario };
@@ -144,11 +149,6 @@ export class PerfilComponent implements OnInit {
   }
 
   volver() {
-    this.router.navigate(['/home']);
-  }
-
-  cambiarPassword() {
-    // Implementar modal para cambiar contraseña
-    console.log('Cambiar contraseña - Por implementar');
+     this.location.back();
   }
 }

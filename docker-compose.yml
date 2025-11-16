@@ -7,11 +7,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     restart: unless-stopped
+    networks:
+      - birads_network
 
   backend:
     build: ./backend
@@ -22,9 +24,36 @@ services:
       - postgres
     env_file:
       - ./backend/.env.docker
+    environment:
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN}
     volumes:
       - ./backend:/app
+      - images_data:/app/images
+      - hf_cache:/root/.huggingface
     restart: unless-stopped
+    networks:
+      - birads_network
+
+  frontend:
+    image: nginx:alpine
+    container_name: birads_frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist/frontend:/usr/share/nginx/html
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - birads_network
+
 
 volumes:
   postgres_data:
+  images_data:
+  hf_cache:
+
+networks:
+  birads_network:
+    driver: bridge

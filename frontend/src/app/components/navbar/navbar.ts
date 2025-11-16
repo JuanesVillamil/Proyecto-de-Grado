@@ -21,6 +21,7 @@ export class Navbar {
   cerrarSesion() {
     // Mostrar confirmación antes de cerrar sesión
     const confirmar = confirm('¿Estás seguro de que quieres cerrar sesión?');
+    this.router.navigate(['/']);
     
     if (confirmar) {
       // Limpiar el token y datos del usuario del localStorage
@@ -29,8 +30,6 @@ export class Navbar {
       
       // Redirigir a la pantalla principal (login)
       this.router.navigate(['/login']);
-      
-      console.log('Sesión cerrada exitosamente');
     }
   }
 
@@ -46,4 +45,7 @@ export class Navbar {
     this.router.navigate(['/perfil']);
   }
 
+  irAanalisis() {
+    this.router.navigate(['/upload'])
+  }
 }
