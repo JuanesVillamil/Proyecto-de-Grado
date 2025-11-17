@@ -262,9 +262,9 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 
 **Proyecto de Grado - Ingeniería de Sistemas**
 
-- **Estudiante**: [Tu Nombre]
-- **Director**: [Nombre del Director]
-- **Universidad**: [Nombre de la Universidad]
+- **Estudiantes**: Villamil J., Barajas S., Quintero P., Montero L.
+- **Director**: Andrea del Pilar Rueda Olarte
+- **Universidad**: Pontificia Universidad Javeriana
 - **Año**: 2025
 
 ## 🙏 Agradecimientos
@@ -276,9 +276,9 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.m
 
 ## 📞 Contacto
 
-- **Email**: [tu-email@universidad.edu]
-- **LinkedIn**: [tu-perfil-linkedin]
-- **GitHub**: [JuanesVillamil](https://github.com/JuanesVillamil)
+- **Email**: JuanesVillamil@outlook.com
+- **LinkedIn**: https://www.linkedin.com/in/juan-esteban-villamil-ardila-0307a41ba/
+- **GitHub**: [JuanesVillamil] (https://github.com/JuanesVillamil)
 
 ---
 
